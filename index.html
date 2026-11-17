@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Pixel Turbo - Game Balapan Kontrol HP via QR</title>
+  <title>Nagala Edu Arcade - Nabila Choirunisa</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -23,7 +23,6 @@
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
   <style>
-    /* Custom Pixel-Art & Arcade Styling */
     :root {
       --font-pixel: 'Press Start 2P', monospace;
       --font-vt: 'VT323', monospace;
@@ -40,7 +39,7 @@
       width: 100%;
       height: 100dvh;
       overflow: hidden;
-      background-color: #0b0d17;
+      background-color: #070913;
       color: #f8fafc;
       font-family: var(--font-vt);
       user-select: none;
@@ -66,14 +65,24 @@
       height: 100%;
     }
 
-    /* Retro CRT Scanline Subtle Overlay */
+    /* Subtle Retro CRT Scanlines */
     .crt-scanlines {
       background: linear-gradient(
         rgba(18, 16, 16, 0) 50%,
-        rgba(0, 0, 0, 0.22) 50%
+        rgba(0, 0, 0, 0.2) 50%
       );
       background-size: 100% 4px;
       pointer-events: none;
+    }
+
+    /* Retro Pixel Grid Background for Home Launcher */
+    .arcade-bg-grid {
+      background-color: #070913;
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.16), transparent 60%),
+        linear-gradient(to right, rgba(30, 41, 59, 0.45) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(30, 41, 59, 0.45) 1px, transparent 1px);
+      background-size: 100% 100%, 28px 28px, 28px 28px;
     }
 
     /* Arcade Bevel Buttons */
@@ -95,258 +104,334 @@
         0 1px 0 #000;
     }
 
-    /* Pixel Panel Frame */
+    /* Pixel Card & Cartridge Frame */
     .pixel-card {
-      background: #141829;
+      background: #111629;
       border: 4px solid #38bdf8;
       box-shadow:
-        0 0 0 4px #090b12,
-        0 12px 30px rgba(0, 0, 0, 0.75);
+        0 0 0 4px #070913,
+        0 12px 28px rgba(0, 0, 0, 0.75);
+    }
+
+    .game-cartridge {
+      background: linear-gradient(180deg, #161d36 0%, #0e1324 100%);
+      border: 3px solid #334155;
+      box-shadow: 0 6px 0 #05070e;
+      transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+    }
+
+    .game-cartridge:hover, .game-cartridge.selected-cart {
+      transform: translateY(-4px);
+      border-color: #fbbf24;
+      box-shadow:
+        0 0 20px rgba(251, 191, 36, 0.3),
+        0 10px 0 #05070e;
     }
 
     /* QR Container */
-    #qrCodeBox img, #qrCodeBox canvas {
+    #launcherQrBox img, #launcherQrBox canvas,
+    #modalQrBox img, #modalQrBox canvas {
       margin: 0 auto;
       image-rendering: pixelated;
-      border: 6px solid #ffffff;
+      border: 5px solid #ffffff;
       border-radius: 4px;
     }
 
-    /* Controller Touch Zone Lock */
     .controller-surface {
       touch-action: none;
       overscroll-behavior: none;
     }
 
-    @keyframes pulseGlow {
-      0%, 100% { filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7)); }
-      50% { filter: drop-shadow(0 0 16px rgba(244, 63, 94, 0.9)); }
+    @keyframes titleFloat {
+      0%, 100% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6)); }
+      50% { transform: translateY(-3px); filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.85)); }
     }
 
-    .title-glow {
-      animation: pulseGlow 2.4s infinite ease-in-out;
+    .hero-glow {
+      animation: titleFloat 2.8s infinite ease-in-out;
     }
   </style>
 </head>
 <body class="relative flex flex-col justify-between bg-slate-950 text-slate-100">
 
   <!-- ===================================================================== -->
-  <!-- TOAST NOTIFICATION BANNER (Replaces alert/confirm)                    -->
+  <!-- TOAST NOTIFICATION BANNER                                             -->
   <!-- ===================================================================== -->
   <div id="toastBanner" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2.5 rounded-lg border-2 border-amber-400 bg-slate-900/95 text-amber-300 font-pixel text-[10px] sm:text-xs shadow-2xl text-center max-w-[92vw]">
     <span id="toastText">Pesan Sistem</span>
   </div>
 
   <!-- ===================================================================== -->
-  <!-- VIEW 1: HOST / MAIN ARCADE SCREEN (PC / LAPTOP / TV)                  -->
+  <!-- VIEW 1: HOME ARCADE LAUNCHER (NAGALA EDU - NABILA CHOIRUNISA)         -->
   <!-- ===================================================================== -->
-  <div id="hostView" class="relative w-full h-full flex flex-col overflow-hidden">
+  <div id="launcherView" class="arcade-bg-grid relative w-full h-full flex flex-col overflow-y-auto">
 
-    <!-- Top Arcade HUD Bar -->
-    <header class="relative z-20 flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5 sm:py-2.5 bg-slate-950/90 border-b-4 border-slate-800">
-      <!-- Brand & Room PIN -->
-      <div class="flex items-center gap-2 sm:gap-3">
-        <div class="px-2.5 py-1 bg-rose-600 border-2 border-white rounded text-white font-pixel text-[10px] sm:text-xs tracking-wider">
+    <!-- Top Console Header Bar -->
+    <header class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-6 bg-slate-950/90 backdrop-blur-xs border-b-4 border-slate-800">
+      <div class="flex items-center gap-2.5">
+        <div class="px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 border-2 border-white rounded text-slate-950 font-pixel text-[10px] sm:text-xs">
+          🕹️ ARCADE HUB
+        </div>
+        <div class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded bg-slate-900 border border-sky-500/50 text-sky-300 text-sm sm:text-base">
+          <span>Developer:</span>
+          <strong class="text-amber-300">Nagala Edu - Nabila Choirunisa</strong>
+        </div>
+      </div>
+
+      <!-- Global Phone Connection Pill & Actions -->
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-xs sm:text-sm">
+          <span class="phone-dot w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span class="phone-label text-slate-300 font-bold">Menunggu HP</span>
+        </div>
+
+        <button id="launcherOpenManualBtn" class="pixel-btn px-2.5 py-1 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-pixel text-[9px] sm:text-[10px]">
+          📖 PANDUAN
+        </button>
+
+        <button id="launcherToPhoneBtn" class="pixel-btn px-2.5 py-1 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-pixel text-[9px] sm:text-[10px]">
+          📱 MODE HP
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Launcher Content Container -->
+    <div class="flex-1 max-w-6xl w-full mx-auto px-4 py-4 sm:py-6 flex flex-col justify-between gap-5">
+
+      <!-- Hero Banner: Developer Branding + QR Pairing Box -->
+      <section class="pixel-card rounded-2xl p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+        <!-- Left 7 Cols: Title & Developer Showcase -->
+        <div class="lg:col-span-7 text-center lg:text-left space-y-2.5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-950 border border-indigo-400/60 text-indigo-200 text-sm sm:text-base">
+            <span>🎓 KARYA INTERAKTIF</span>
+            <span>•</span>
+            <span class="text-amber-300 font-bold">NAGALA EDU</span>
+          </div>
+
+          <h1 class="hero-glow font-pixel text-xl sm:text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-sky-300 to-emerald-300 leading-snug">
+            NAGALA EDU ARCADE
+          </h1>
+
+          <div class="inline-block px-3.5 py-1.5 rounded-lg bg-slate-950/90 border-2 border-amber-400/70">
+            <span class="text-slate-400 text-base sm:text-lg">Developer: </span>
+            <span class="font-pixel text-[11px] sm:text-sm text-amber-300">Nagala Edu - Nabila Choirunisa</span>
+          </div>
+
+          <p class="text-lg sm:text-xl text-slate-300 leading-snug pt-1">
+            Pilih game retro favoritmu di bawah! Bisa dimainkan langsung pakai <b>Keyboard / Layar Sentuh</b>, atau <b>Scan QR pakai HP</b> untuk menyulap HP jadi stik gamepad nirkabel!
+          </p>
+        </div>
+
+        <!-- Right 5 Cols: Instant QR Code & Room PIN -->
+        <div class="lg:col-span-5 flex flex-col sm:flex-row lg:flex-row items-center justify-center gap-4 bg-slate-950/90 p-3.5 rounded-xl border-2 border-slate-800">
+          <div id="launcherQrBox" class="p-1.5 bg-white rounded-lg shadow-md min-h-[124px] min-w-[124px] flex items-center justify-center shrink-0">
+            <span class="text-slate-800 text-xs font-bold">QR...</span>
+          </div>
+
+          <div class="text-center sm:text-left space-y-1.5">
+            <div class="text-xs text-sky-400 font-pixel">KONEK STIK HP</div>
+            <div class="flex items-center justify-center sm:justify-start gap-2">
+              <span class="text-slate-400 text-base">PIN:</span>
+              <span id="launcherPinCode" class="font-pixel text-lg sm:text-xl text-amber-400 tracking-widest">----</span>
+              <button id="launcherCopyPinBtn" class="px-2 py-0.5 bg-sky-600 hover:bg-sky-500 text-white rounded text-xs font-bold">
+                Salin
+              </button>
+            </div>
+            <p class="text-sm text-slate-400 leading-tight">
+              Scan QR di HP (atau buka link ini di HP → klik <b>Mode HP</b> → masukkan PIN).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Game Cartridge Selection Grid -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-pixel text-xs sm:text-sm text-sky-300 flex items-center gap-2">
+            <span>🎮 PILIH KOLEKSI GAME (4 TERSEDIA)</span>
+          </h2>
+          <span class="text-sm sm:text-base text-slate-400">Klik kartu game untuk mulai bermain</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+          <!-- GAME 1: PIXEL TURBO RACER -->
+          <div data-launch-game="racing" class="game-cartridge selected-cart rounded-xl p-4 flex flex-col justify-between cursor-pointer group">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2 py-0.5 rounded bg-rose-600 text-white font-pixel text-[8px]">ARCADE 3D</span>
+                <span class="text-xs text-amber-300 font-bold">★ POPULER</span>
+              </div>
+              <div class="h-24 rounded-lg bg-gradient-to-b from-sky-600 to-slate-800 border-2 border-slate-700 mb-3 flex flex-col items-center justify-center relative overflow-hidden">
+                <span class="text-4xl group-hover:scale-110 transition-transform">🏎️</span>
+                <span class="font-pixel text-[8px] text-amber-300 mt-1">3 BIOMA BALAP</span>
+              </div>
+              <h3 class="font-pixel text-xs text-amber-400 mb-1 leading-snug">PIXEL TURBO RACER</h3>
+              <p class="text-base text-slate-300 leading-tight mb-3">
+                Balapan kecepatan tinggi melintasi pantai, kota neon & gurun! Kumpulkan koin & nitro.
+              </p>
+            </div>
+            <button class="pixel-btn w-full py-2.5 rounded-lg bg-emerald-500 group-hover:bg-emerald-400 text-slate-950 font-pixel text-[10px]">
+              ▶ MAIN SEKARANG
+            </button>
+          </div>
+
+          <!-- GAME 2: GALAXY DEFENDER -->
+          <div data-launch-game="shooter" class="game-cartridge rounded-xl p-4 flex flex-col justify-between cursor-pointer group">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2 py-0.5 rounded bg-indigo-600 text-white font-pixel text-[8px]">SHOOTER</span>
+                <span class="text-xs text-cyan-300 font-bold">⚡ AKSI</span>
+              </div>
+              <div class="h-24 rounded-lg bg-gradient-to-b from-indigo-950 to-slate-900 border-2 border-slate-700 mb-3 flex flex-col items-center justify-center relative overflow-hidden">
+                <span class="text-4xl group-hover:scale-110 transition-transform">🛸</span>
+                <span class="font-pixel text-[8px] text-cyan-300 mt-1">LASER & NOVA</span>
+              </div>
+              <h3 class="font-pixel text-xs text-cyan-300 mb-1 leading-snug">GALAXY DEFENDER</h3>
+              <p class="text-base text-slate-300 leading-tight mb-3">
+                Pertahankan galaksi dari invasi armada alien pixel! Ambil power-up laser ganda & perisai.
+              </p>
+            </div>
+            <button class="pixel-btn w-full py-2.5 rounded-lg bg-sky-500 group-hover:bg-sky-400 text-slate-950 font-pixel text-[10px]">
+              ▶ MAIN SEKARANG
+            </button>
+          </div>
+
+          <!-- GAME 3: BRICK BREAKER NEO -->
+          <div data-launch-game="brick" class="game-cartridge rounded-xl p-4 flex flex-col justify-between cursor-pointer group">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-pixel text-[8px]">KLASIK</span>
+                <span class="text-xs text-emerald-300 font-bold">🔥 REFLEKS</span>
+              </div>
+              <div class="h-24 rounded-lg bg-gradient-to-b from-purple-950 to-slate-900 border-2 border-slate-700 mb-3 flex flex-col items-center justify-center relative overflow-hidden">
+                <span class="text-4xl group-hover:scale-110 transition-transform">🧱</span>
+                <span class="font-pixel text-[8px] text-pink-300 mt-1">MULTI-BALL</span>
+              </div>
+              <h3 class="font-pixel text-xs text-pink-400 mb-1 leading-snug">BRICK BREAKER NEO</h3>
+              <p class="text-base text-slate-300 leading-tight mb-3">
+                Pantulkan bola energi untuk menghancurkan dinding neon bertingkat & tangkap kapsul bonus!
+              </p>
+            </div>
+            <button class="pixel-btn w-full py-2.5 rounded-lg bg-amber-400 group-hover:bg-amber-300 text-slate-950 font-pixel text-[10px]">
+              ▶ MAIN SEKARANG
+            </button>
+          </div>
+
+          <!-- GAME 4: SNAKE EDU QUEST -->
+          <div data-launch-game="snake" class="game-cartridge rounded-xl p-4 flex flex-col justify-between cursor-pointer group">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2 py-0.5 rounded bg-emerald-600 text-white font-pixel text-[8px]">EDU RETRO</span>
+                <span class="text-xs text-amber-300 font-bold">🎓 KUIS BONUS</span>
+              </div>
+              <div class="h-24 rounded-lg bg-gradient-to-b from-emerald-950 to-slate-900 border-2 border-slate-700 mb-3 flex flex-col items-center justify-center relative overflow-hidden">
+                <span class="text-4xl group-hover:scale-110 transition-transform">🐍</span>
+                <span class="font-pixel text-[8px] text-emerald-300 mt-1">PETI KUIS EDU</span>
+              </div>
+              <h3 class="font-pixel text-xs text-emerald-400 mb-1 leading-snug">SNAKE EDU QUEST</h3>
+              <p class="text-base text-slate-300 leading-tight mb-3">
+                Kumpulkan apel emas & buka Peti Kuis Nagala Edu untuk melipatgandakan skor!
+              </p>
+            </div>
+            <button class="pixel-btn w-full py-2.5 rounded-lg bg-violet-500 group-hover:bg-violet-400 text-white font-pixel text-[10px]">
+              ▶ MAIN SEKARANG
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Footer Developer Signature -->
+      <footer class="text-center border-t border-slate-800/90 pt-3 pb-1 text-sm sm:text-base text-slate-400">
+        © 2026 <strong class="text-amber-300">Nagala Edu - Nabila Choirunisa</strong> • Multi-Game Pixel Console dengan Kontroler HP Nirkabel
+      </footer>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 2: ACTIVE GAME STAGE (PC / LAPTOP / TV SCREEN)                   -->
+  <!-- ===================================================================== -->
+  <div id="gameStageView" class="hidden relative w-full h-full flex flex-col overflow-hidden">
+
+    <!-- Top Active Game HUD Bar -->
+    <header class="relative z-20 flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5 bg-slate-950/95 border-b-4 border-slate-800">
+      <!-- Back to Launcher + Active Game Badge -->
+      <div class="flex items-center gap-2">
+        <button id="backToLauncherBtn" class="pixel-btn px-2.5 py-1 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-pixel text-[9px] sm:text-[10px]">
+          🏠 MENU GAME
+        </button>
+
+        <div id="activeGameBadge" class="px-2.5 py-1 bg-rose-600 border-2 border-white rounded text-white font-pixel text-[9px] sm:text-xs">
           PIXEL TURBO
         </div>
-        <button id="toggleQrModalBtn" class="pixel-btn flex items-center gap-2 px-2.5 py-1 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-pixel text-[9px] sm:text-[11px]" title="Tampilkan QR Code Koneksi HP">
-          <span>📱 PIN: <strong id="hudRoomCode">----</strong></span>
-          <span class="hidden sm:inline underline">[QR]</span>
-        </button>
-        <button id="openManualBtn" class="pixel-btn px-2.5 py-1 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-pixel text-[9px] sm:text-[10px]" title="Buka Panduan Cara Konek HP">
-          📖 PANDUAN
+
+        <button id="stageQrBtn" class="pixel-btn hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-pixel text-[9px]">
+          📱 PIN: <strong id="stagePinText">----</strong>
         </button>
       </div>
 
-      <!-- Live Telemetry Metrics -->
+      <!-- Dynamic Telemetry HUD -->
       <div class="flex items-center gap-3 sm:gap-6 text-lg sm:text-2xl tracking-wider">
         <div class="flex flex-col items-center leading-none">
-          <span class="text-[11px] sm:text-xs text-slate-400 uppercase">SKOR</span>
+          <span class="text-[10px] sm:text-xs text-slate-400 uppercase">SKOR</span>
           <span id="hudScore" class="font-pixel text-xs sm:text-sm text-amber-400">00000</span>
         </div>
         <div class="flex flex-col items-center leading-none">
-          <span class="text-[11px] sm:text-xs text-slate-400 uppercase">SPEED</span>
-          <span class="font-pixel text-xs sm:text-sm text-emerald-400"><span id="hudSpeed">0</span> <span class="text-[9px]">KM/H</span></span>
+          <span id="hudMetric2Label" class="text-[10px] sm:text-xs text-slate-400 uppercase">SPEED</span>
+          <span id="hudMetric2Val" class="font-pixel text-xs sm:text-sm text-emerald-400">0</span>
         </div>
-        <div class="hidden md:flex flex-col items-start leading-none w-28">
-          <span class="text-[11px] text-slate-400 uppercase mb-1">NITRO</span>
-          <div class="w-full h-3 bg-slate-800 border border-slate-600 rounded overflow-hidden">
-            <div id="hudNitroBar" class="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-100" style="width: 100%"></div>
-          </div>
+        <div class="hidden sm:flex flex-col items-center leading-none">
+          <span id="hudMetric3Label" class="text-[10px] text-slate-400 uppercase">ENERGI</span>
+          <span id="hudMetric3Val" class="font-pixel text-xs text-cyan-400">100%</span>
         </div>
       </div>
 
-      <!-- Connection Status & Audio / Demo Controls -->
+      <!-- Connection Status & Simulator / Audio -->
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <div id="phoneStatusPill" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-600 text-xs sm:text-sm">
-          <span id="phoneStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-          <span id="phoneStatusLabel" class="text-slate-300 font-bold">Menunggu HP</span>
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-600 text-xs sm:text-sm">
+          <span class="phone-dot w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span class="phone-label text-slate-300 font-bold">Menunggu HP</span>
         </div>
 
-        <button id="toggleSimControllerBtn" class="pixel-btn px-2 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white font-pixel text-[9px] hidden sm:inline-flex items-center gap-1" title="Uji coba kontroler HP langsung di layar ini">
-          🎮 Simulasi HP
+        <button id="toggleSimPadBtn" class="pixel-btn px-2 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white font-pixel text-[9px] hidden sm:inline-flex items-center gap-1">
+          🎮 Stik Layar
         </button>
 
-        <button id="muteAudioBtn" class="pixel-btn px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-sm sm:text-base" title="Suara Efek Mesin">
+        <button id="muteAudioBtn" class="pixel-btn px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-sm">
           🔊
         </button>
       </div>
     </header>
 
-    <!-- Main Game Canvas Stage -->
-    <main class="relative flex-1 w-full h-full bg-sky-900 overflow-hidden">
+    <!-- Main Game Canvas Area -->
+    <main class="relative flex-1 w-full h-full bg-slate-950 overflow-hidden">
       <canvas id="gameCanvas"></canvas>
       <div class="crt-scanlines absolute inset-0"></div>
 
-      <!-- ================================================================= -->
-      <!-- OVERLAY: START LOBBY & QR PAIRING MODAL                           -->
-      <!-- ================================================================= -->
-      <div id="lobbyOverlay" class="absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs overflow-y-auto">
-        <div class="pixel-card w-full max-w-3xl rounded-xl p-4 sm:p-6 text-center my-auto">
-          <h1 class="title-glow font-pixel text-lg sm:text-2xl md:text-3xl text-amber-400 mb-2 leading-snug">
-            PIXEL TURBO RACER
-          </h1>
-          <p class="text-lg sm:text-xl text-sky-300 mb-4">
-            Scan QR Code pakai HP untuk jadikan HP sebagai <span class="text-amber-300 font-bold">Setir & Pedal Nirkabel!</span>
+      <!-- EDU TRIVIA POPUP OVERLAY (Used in Snake Edu Quest) -->
+      <div id="eduQuizOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/85">
+        <div class="pixel-card w-full max-w-lg rounded-xl p-5 text-center">
+          <div class="inline-block px-3 py-1 rounded bg-emerald-500 text-slate-950 font-pixel text-[10px] mb-2">
+            🎓 PETI KUIS NAGALA EDU (+500 POIN)
+          </div>
+          <p id="eduQuizQuestion" class="text-xl sm:text-2xl text-white font-bold mb-4 leading-snug">
+            Pertanyaan kuis muncul di sini...
           </p>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-center bg-slate-900/90 p-4 rounded-lg border-2 border-slate-700">
-            <!-- Left: QR Code & PIN -->
-            <div class="flex flex-col items-center justify-center">
-              <div id="qrCodeBox" class="p-2 bg-white rounded-lg shadow-lg mb-2.5 min-h-[156px] min-w-[156px] flex items-center justify-center">
-                <span class="text-slate-800 text-sm font-bold">Membuat QR...</span>
-              </div>
-
-              <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded border border-sky-500/60">
-                <span class="text-slate-400 text-base">PIN ROOM:</span>
-                <span id="lobbyRoomCode" class="font-pixel text-base sm:text-lg text-amber-400 tracking-widest">----</span>
-                <button id="copyRoomLinkBtn" class="ml-1 px-2 py-0.5 bg-sky-600 hover:bg-sky-500 text-white rounded text-xs font-bold">
-                  Salin
-                </button>
-              </div>
-
-              <div id="previewUrlHint" class="text-xs sm:text-sm text-slate-300 mt-2.5 max-w-xs leading-snug bg-slate-950/90 p-2.5 rounded border border-slate-700 text-left">
-                1. Buka link game ini di HP.<br/>
-                2. Klik <b>"Saya Kontroler HP"</b>.<br/>
-                3. Tekan <b>Scan QR</b> atau ketik <b>PIN ROOM</b> di atas.
-              </div>
-
-              <button id="lobbyManualBtn" class="mt-2 text-xs sm:text-sm text-amber-400 hover:text-amber-300 underline font-bold">
-                📖 Baca Panduan Lengkap Cara Konek HP
-              </button>
-            </div>
-
-            <!-- Right: Connection Status & Quick Start -->
-            <div class="flex flex-col justify-between h-full text-left space-y-3">
-              <div class="p-3 rounded-lg bg-slate-950 border-2 border-slate-800">
-                <div class="text-xs text-slate-400 uppercase mb-1">Status Koneksi HP:</div>
-                <div id="lobbyPhoneStatus" class="flex items-center gap-2 text-lg sm:text-xl font-bold text-amber-300">
-                  <span class="inline-block w-3 h-3 rounded-full bg-amber-400 animate-ping"></span>
-                  <span>Belum ada HP terhubung...</span>
-                </div>
-                <p class="text-sm text-slate-400 mt-1">
-                  Kamu juga bisa langsung main pakai <b>Keyboard (Panah / WASD + Spasi)</b> atau klik tombol <b>Simulasi HP</b>!
-                </p>
-              </div>
-
-              <!-- Car Color Picker -->
-              <div class="p-3 rounded-lg bg-slate-950 border-2 border-slate-800">
-                <div class="text-xs text-slate-400 uppercase mb-2">Pilih Warna Mobil:</div>
-                <div class="flex items-center gap-2.5" id="hostColorPicker">
-                  <button data-color="#ef4444" class="color-swatch w-8 h-8 rounded border-2 border-white bg-red-500 ring-2 ring-amber-400" title="Merah Turbo"></button>
-                  <button data-color="#3b82f6" class="color-swatch w-8 h-8 rounded border-2 border-white bg-blue-500" title="Biru Skyline"></button>
-                  <button data-color="#eab308" class="color-swatch w-8 h-8 rounded border-2 border-white bg-yellow-500" title="Kuning Kuningan"></button>
-                  <button data-color="#10b981" class="color-swatch w-8 h-8 rounded border-2 border-white bg-emerald-500" title="Hijau Neon"></button>
-                </div>
-              </div>
-
-              <!-- Action Buttons -->
-              <div class="flex flex-col gap-2 pt-1">
-                <button id="startRaceBtn" class="pixel-btn w-full py-3 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-pixel text-xs sm:text-sm tracking-wide">
-                  ▶ MULAI BALAPAN!
-                </button>
-                <div class="grid grid-cols-2 gap-2">
-                  <button id="switchToPhoneModeBtn" class="pixel-btn py-2 px-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-pixel text-[9px] sm:text-[10px]">
-                    📱 Saya Kontroler HP
-                  </button>
-                  <button id="lobbySimBtn" class="pixel-btn py-2 px-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-pixel text-[9px] sm:text-[10px]">
-                    🎮 Test Stik di Layar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <div id="eduQuizOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
         </div>
       </div>
 
-      <!-- ================================================================= -->
-      <!-- OVERLAY: STEP-BY-STEP CONNECTION MANUAL / GUIDE                   -->
-      <!-- ================================================================= -->
-      <div id="manualModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-xs overflow-y-auto">
-        <div class="pixel-card w-full max-w-2xl rounded-xl p-5 sm:p-6 text-left my-auto">
-          <div class="flex items-center justify-between border-b-2 border-slate-700 pb-3 mb-4">
-            <h2 class="font-pixel text-sm sm:text-lg text-amber-400">📖 PANDUAN KONEK HP</h2>
-            <button id="closeManualBtn" class="pixel-btn px-3 py-1 rounded bg-rose-600 text-white font-pixel text-[10px]">TUTUP [X]</button>
-          </div>
-
-          <div class="space-y-3.5 text-base sm:text-lg text-slate-200 max-h-[65vh] overflow-y-auto pr-1">
-            <div class="p-3 rounded-lg bg-slate-900 border border-sky-500/40">
-              <div class="font-pixel text-xs text-sky-400 mb-1">LANGKAH 1: BUKA HALAMAN GAME DI HP</div>
-              <p class="leading-snug text-slate-300">
-                Pastikan layar utama (PC/Laptop) dan HP membuka <b>link web yang sama</b>.
-                <span class="block mt-1 text-amber-300 text-sm">
-                  *Catatan Penting: Jika kamu menjalankan game ini di dalam jendela preview editor (bukan link <code>https://...</code> publik), kamera HP belum bisa membuka halaman preview lokal secara langsung sebelum file HTML ini di-upload/di-host ke web (misal Netlify, Vercel, atau GitHub Pages).
-                </span>
-              </p>
-            </div>
-
-            <div class="p-3 rounded-lg bg-slate-900 border border-emerald-500/40">
-              <div class="font-pixel text-xs text-emerald-400 mb-1">LANGKAH 2: SCAN QR ATAU MASUKKAN KODE PIN</div>
-              <ul class="list-disc pl-5 space-y-1 text-slate-300 leading-snug">
-                <li><b>Cara A (Scan Kamera HP):</b> Jika game sudah online (URL <code>https://...</code>), arahkan kamera HP ke QR Code di layar PC, lalu buka linknya. HP otomatis masuk ke mode stik!</li>
-                <li><b>Cara B (Scan QR di Dalam Game / Input PIN):</b> Buka halaman game di HP → klik tombol <span class="text-sky-300 font-bold">"📱 Saya Kontroler HP"</span> → klik <span class="text-amber-300 font-bold">"📷 Scan QR di Layar PC"</span> atau ketik <b>4 huruf/angka PIN ROOM</b>.</li>
-              </ul>
-            </div>
-
-            <div class="p-3 rounded-lg bg-slate-900 border border-violet-500/40">
-              <div class="font-pixel text-xs text-violet-400 mb-1">LANGKAH 3: ATUR LINK HOSTING (OPSIONAL)</div>
-              <p class="text-sm text-slate-300 mb-2">
-                Jika kamu sudah meng-upload file HTML ini ke alamat web sendiri, tempel URL-nya di bawah agar QR Code langsung mengarah ke alamat tersebut:
-              </p>
-              <div class="flex flex-col sm:flex-row gap-2">
-                <input id="customHostUrlInput" type="url" placeholder="https://contoh-game-kamu.netlify.app"
-                  class="flex-1 px-3 py-1.5 rounded bg-slate-950 border border-slate-600 text-sm text-white focus:outline-none focus:border-sky-400" />
-                <button id="applyCustomUrlBtn" class="pixel-btn px-3 py-1.5 rounded bg-sky-500 text-slate-950 font-pixel text-[10px]">
-                  UPDATE QR
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-slate-800 flex justify-end">
-            <button id="manualGotItBtn" class="pixel-btn px-5 py-2.5 rounded-lg bg-emerald-500 text-slate-950 font-pixel text-xs">
-              SIAP, MENGERTI!
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ================================================================= -->
-      <!-- OVERLAY: GAME OVER / FINISH SUMMARY                               -->
-      <!-- ================================================================= -->
+      <!-- GAME OVER / STAGE COMPLETE OVERLAY -->
       <div id="gameOverOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/85">
         <div class="pixel-card w-full max-w-md rounded-xl p-6 text-center">
-          <h2 class="font-pixel text-xl sm:text-2xl text-rose-500 mb-2">WAKTU HABIS!</h2>
-          <p class="text-lg text-slate-300 mb-4">Balapan selesai! Cek perolehan skormu:</p>
+          <h2 id="gameOverTitle" class="font-pixel text-lg sm:text-2xl text-rose-500 mb-2">PERMAINAN SELESAI!</h2>
+          <p id="gameOverSubtitle" class="text-lg text-slate-300 mb-4">Nagala Edu Arcade • Hasil Pertandingan:</p>
 
           <div class="bg-slate-900 border-2 border-slate-700 rounded-lg p-4 mb-5 space-y-2 text-xl">
             <div class="flex justify-between">
               <span class="text-slate-400">SKOR AKHIR:</span>
               <span id="finalScoreText" class="font-pixel text-amber-400">0</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-400">JARAK TEMPUH:</span>
-              <span id="finalDistText" class="font-pixel text-sky-400">0 M</span>
             </div>
             <div class="flex justify-between">
               <span class="text-slate-400">REKOR TERBAIK:</span>
@@ -355,39 +440,41 @@
           </div>
 
           <div class="flex flex-col sm:flex-row gap-3">
-            <button id="restartRaceBtn" class="pixel-btn flex-1 py-3 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-pixel text-xs">
+            <button id="restartGameBtn" class="pixel-btn flex-1 py-3 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-pixel text-xs">
               ↻ MAIN LAGI
             </button>
-            <button id="openLobbyBtn" class="pixel-btn py-3 px-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-pixel text-xs">
-              QR / LOBBY
+            <button id="gameOverHomeBtn" class="pixel-btn py-3 px-4 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-pixel text-xs">
+              🏠 PILIH GAME
             </button>
           </div>
         </div>
       </div>
 
-      <!-- ================================================================= -->
-      <!-- FLOATING SPLIT-SCREEN SIMULATED PHONE CONTROLLER (For 1-Device Demo)-->
-      <!-- ================================================================= -->
-      <div id="simPhoneDrawer" class="hidden absolute bottom-3 right-3 z-40 w-[330px] max-w-[94vw] rounded-2xl border-4 border-slate-700 bg-slate-900/95 shadow-2xl p-3">
+      <!-- FLOATING ON-SCREEN SIMULATOR / TOUCH PAD (For 1-Device Play) -->
+      <div id="simPadDrawer" class="hidden absolute bottom-3 right-3 z-40 w-[340px] max-w-[94vw] rounded-2xl border-4 border-slate-700 bg-slate-900/95 shadow-2xl p-3">
         <div class="flex items-center justify-between border-b border-slate-700 pb-1.5 mb-2">
-          <span class="font-pixel text-[9px] text-violet-300">📱 SIMULATOR KONTROLER HP</span>
-          <button id="closeSimDrawerBtn" class="text-xs px-2 py-0.5 bg-rose-600 text-white rounded font-bold">Tutup</button>
+          <span class="font-pixel text-[9px] text-violet-300">🎮 KONTROLER LAYAR</span>
+          <button id="closeSimPadBtn" class="text-xs px-2 py-0.5 bg-rose-600 text-white rounded font-bold">Tutup</button>
         </div>
         <div class="grid grid-cols-2 gap-3 items-center">
-          <!-- Left / Right Steering -->
-          <div class="grid grid-cols-2 gap-2">
-            <button data-sim-btn="left" class="sim-pad-btn pixel-btn h-16 rounded-xl bg-slate-700 text-white font-pixel text-base flex items-center justify-center">◀</button>
-            <button data-sim-btn="right" class="sim-pad-btn pixel-btn h-16 rounded-xl bg-slate-700 text-white font-pixel text-base flex items-center justify-center">▶</button>
+          <!-- 4-Way D-Pad -->
+          <div class="grid grid-cols-3 gap-1.5">
+            <div></div>
+            <button data-sim-btn="up" class="sim-pad-btn pixel-btn h-11 rounded-lg bg-slate-700 text-white font-pixel text-xs">▲</button>
+            <div></div>
+            <button data-sim-btn="left" class="sim-pad-btn pixel-btn h-11 rounded-lg bg-slate-700 text-white font-pixel text-xs">◀</button>
+            <button data-sim-btn="down" class="sim-pad-btn pixel-btn h-11 rounded-lg bg-slate-700 text-white font-pixel text-xs">▼</button>
+            <button data-sim-btn="right" class="sim-pad-btn pixel-btn h-11 rounded-lg bg-slate-700 text-white font-pixel text-xs">▶</button>
           </div>
-          <!-- Gas & Nitro -->
+          <!-- Action Buttons -->
           <div class="grid grid-cols-2 gap-2">
-            <button data-sim-btn="boost" class="sim-pad-btn pixel-btn h-16 rounded-xl bg-cyan-500 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center">
+            <button data-sim-btn="actionB" class="sim-pad-btn pixel-btn h-20 rounded-xl bg-cyan-500 text-slate-950 font-pixel text-[9px] flex flex-col items-center justify-center">
               <span>🔥</span>
-              <span>NITRO</span>
+              <span>SKILL / B</span>
             </button>
-            <button data-sim-btn="gas" class="sim-pad-btn pixel-btn h-16 rounded-xl bg-emerald-500 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center">
-              <span>▲</span>
-              <span>GAS</span>
+            <button data-sim-btn="actionA" class="sim-pad-btn pixel-btn h-20 rounded-xl bg-emerald-500 text-slate-950 font-pixel text-[9px] flex flex-col items-center justify-center">
+              <span>⚡</span>
+              <span>GAS / A</span>
             </button>
           </div>
         </div>
@@ -396,19 +483,62 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- VIEW 2: MOBILE PHONE CONTROLLER VIEW (OPENED VIA QR SCAN / PIN)       -->
+  <!-- MODAL: QR CODE & CONNECTION GUIDE (SHARED ACROSS LAUNCHER & GAMES)    -->
+  <!-- ===================================================================== -->
+  <div id="manualModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-xs overflow-y-auto">
+    <div class="pixel-card w-full max-w-2xl rounded-xl p-5 sm:p-6 text-left my-auto">
+      <div class="flex items-center justify-between border-b-2 border-slate-700 pb-3 mb-4">
+        <h2 class="font-pixel text-xs sm:text-base text-amber-400">📱 KONEKSI HP & PANDUAN ARCADE</h2>
+        <button id="closeManualBtn" class="pixel-btn px-3 py-1 rounded bg-rose-600 text-white font-pixel text-[10px]">TUTUP [X]</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center mb-4 bg-slate-900 p-3.5 rounded-xl border border-slate-700">
+        <div class="md:col-span-5 flex flex-col items-center">
+          <div id="modalQrBox" class="p-2 bg-white rounded-lg mb-2 min-h-[140px] min-w-[140px] flex items-center justify-center"></div>
+          <div class="font-pixel text-xs text-amber-400">PIN: <span id="modalPinText">----</span></div>
+        </div>
+        <div class="md:col-span-7 space-y-2 text-base text-slate-200 leading-snug">
+          <div class="font-pixel text-[11px] text-sky-400">CARA MAIN PAKAI HP:</div>
+          <ol class="list-decimal pl-5 space-y-1 text-slate-300">
+            <li>Buka link web <b>Nagala Edu Arcade</b> ini di browser HP.</li>
+            <li>Tekan tombol <b class="text-sky-300">"📱 MODE HP"</b> di pojok kanan atas.</li>
+            <li>Tekan <b>"📷 Scan QR di Layar PC"</b> atau masukkan <b>4 kode PIN</b> di samping.</li>
+            <li>Tombol HP otomatis berubah mengikuti game yang dipilih!</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-lg bg-slate-900 border border-violet-500/40 mb-4">
+        <div class="font-pixel text-[10px] text-violet-300 mb-1">ATUR LINK HOSTING (JIKA DI-DEPLOY KE WEB):</div>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input id="customHostUrlInput" type="url" placeholder="https://nagala-edu-arcade.netlify.app"
+            class="flex-1 px-3 py-1.5 rounded bg-slate-950 border border-slate-600 text-sm text-white focus:outline-none focus:border-sky-400" />
+          <button id="applyCustomUrlBtn" class="pixel-btn px-3 py-1.5 rounded bg-sky-500 text-slate-950 font-pixel text-[10px]">
+            UPDATE QR
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button id="manualGotItBtn" class="pixel-btn px-5 py-2.5 rounded-lg bg-emerald-500 text-slate-950 font-pixel text-xs">
+          SIAP BERMAIN!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 3: ADAPTIVE MOBILE PHONE CONTROLLER (SYNCS WITH ACTIVE GAME)     -->
   <!-- ===================================================================== -->
   <div id="controllerView" class="hidden controller-surface relative w-full h-full flex flex-col justify-between bg-slate-950 p-3 sm:p-5">
 
-    <!-- Step A: Manual PIN Entry & In-App QR Scanner Card -->
+    <!-- Step A: PIN Entry & In-App QR Scanner -->
     <div id="pinJoinOverlay" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-slate-950/95 overflow-y-auto">
       <div class="pixel-card w-full max-w-md rounded-xl p-5 text-center my-auto">
-        <div class="font-pixel text-sm sm:text-base text-amber-400 mb-1.5">HUBUNGKAN KONTROLER HP</div>
-        <p class="text-base sm:text-lg text-slate-300 mb-3 leading-snug">
-          Scan QR Code di layar PC atau masukkan <b>4 karakter PIN ROOM</b>:
-        </p>
+        <div class="text-xs text-sky-400 font-bold mb-1">NAGALA EDU - NABILA CHOIRUNISA</div>
+        <div class="font-pixel text-sm sm:text-base text-amber-400 mb-2">KONEK STIK HP KE LAYAR</div>
 
-        <!-- In-App Camera QR Scanner Viewfinder -->
+        <!-- In-App Camera QR Scanner -->
         <div id="qrScannerBox" class="hidden mb-3 rounded-lg overflow-hidden border-2 border-amber-400 bg-black relative">
           <video id="qrScannerVideo" class="w-full h-48 object-cover" playsinline muted></video>
           <canvas id="qrScannerCanvas" class="hidden"></canvas>
@@ -418,131 +548,130 @@
           </button>
         </div>
 
-        <button id="startQrScanBtn" class="pixel-btn w-full py-2.5 mb-3 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-pixel text-[10px] sm:text-xs flex items-center justify-center gap-2">
+        <button id="startQrScanBtn" class="pixel-btn w-full py-2.5 mb-3 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-pixel text-[10px] sm:text-xs">
           📷 SCAN QR DI LAYAR PC
         </button>
 
-        <div class="text-xs text-slate-400 uppercase mb-1.5">— ATAU KETIK KODE PIN MANUAL —</div>
+        <div class="text-xs text-slate-400 uppercase mb-1.5">— ATAU KETIK 4 KODE PIN —</div>
 
         <input id="manualPinInput" type="text" maxlength="4" placeholder="ABCD" autocomplete="off"
           class="w-full text-center uppercase font-pixel text-2xl tracking-[0.4em] py-2.5 px-4 rounded-lg bg-slate-900 border-2 border-sky-400 text-amber-300 focus:outline-none mb-3" />
 
         <div class="flex flex-col gap-2">
           <button id="joinRoomByPinBtn" class="pixel-btn w-full py-3 rounded-lg bg-emerald-500 text-slate-950 font-pixel text-xs">
-            🔗 SAMBUNGKAN KE LAYAR
+            🔗 SAMBUNGKAN SEKARANG
           </button>
-          <div id="pinJoinStatusMsg" class="hidden text-xs sm:text-sm text-amber-300 font-bold animate-pulse">
-            Menghubungkan jalur cepat P2P ke layar PC...
-          </div>
           <button id="backToHostBtn" class="pixel-btn w-full py-2 rounded-lg bg-slate-700 text-white font-pixel text-[10px]">
-            ← Kembali ke Layar Game Utama
+            ← Kembali ke Menu Konsol
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Top Controller Status Bar -->
+    <!-- Top Controller Bar -->
     <div class="flex items-center justify-between gap-2 bg-slate-900 border-2 border-slate-700 rounded-xl px-3 py-2">
       <div class="flex items-center gap-2">
         <span id="ctrlConnDot" class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
         <div>
-          <div class="font-pixel text-[9px] sm:text-[11px] text-amber-400">ROOM: <span id="ctrlRoomLabel">----</span></div>
-          <div id="ctrlConnText" class="text-xs sm:text-sm text-slate-300 leading-none">Menghubungkan...</div>
+          <div class="font-pixel text-[9px] sm:text-[11px] text-amber-400">
+            ROOM <span id="ctrlRoomLabel">----</span> • <span id="ctrlActiveGameTag" class="text-sky-300">LAUNCHER</span>
+          </div>
+          <div id="ctrlConnText" class="text-xs sm:text-sm text-slate-300 leading-none">Menghubungkan P2P...</div>
         </div>
       </div>
 
-      <!-- Mini Live Dashboard synced from TV/PC -->
-      <div class="flex items-center gap-3 bg-slate-950 px-3 py-1 rounded-lg border border-slate-800">
-        <div class="text-center leading-none">
-          <div class="text-[10px] text-slate-400">SPEED</div>
-          <div class="font-pixel text-[10px] sm:text-xs text-emerald-400"><span id="ctrlSpeedVal">0</span></div>
+      <div class="flex items-center gap-2">
+        <div class="bg-slate-950 px-2.5 py-1 rounded border border-slate-800 text-center leading-none">
+          <div class="text-[9px] text-slate-400">SKOR</div>
+          <div id="ctrlScoreVal" class="font-pixel text-[10px] text-amber-400">0</div>
         </div>
-        <div class="text-center leading-none">
-          <div class="text-[10px] text-slate-400">SKOR</div>
-          <div class="font-pixel text-[10px] sm:text-xs text-amber-400"><span id="ctrlScoreVal">0</span></div>
-        </div>
-      </div>
 
-      <!-- Mode Switch: Touch D-Pad vs Tilt Gyroscope -->
-      <div class="flex items-center gap-1.5">
-        <button id="toggleTiltBtn" class="pixel-btn px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-pixel text-[9px]" title="Gunakan sensor miring HP">
-          📐 SETIR MIRING: OFF
-        </button>
         <button id="ctrlDisconnectBtn" class="pixel-btn px-2 py-1.5 rounded-lg bg-slate-700 text-slate-200 font-pixel text-[9px]">
           PIN
         </button>
       </div>
     </div>
 
-    <!-- Center Action Strip: Horn + Start Trigger + Car Color -->
-    <div class="flex items-center justify-between gap-2 my-2 px-1">
-      <button id="ctrlHornBtn" class="pixel-btn flex-1 py-2.5 px-3 rounded-xl bg-amber-400 text-slate-950 font-pixel text-[10px] sm:text-xs flex items-center justify-center gap-2">
-        📯 KLAKSON
+    <!-- Remote Game Selector Strip (Allows switching games directly from Phone!) -->
+    <div class="flex items-center gap-1.5 overflow-x-auto py-1.5 px-1">
+      <button data-remote-game="LAUNCHER" class="remote-game-pill pixel-btn px-2.5 py-1.5 rounded-lg bg-slate-700 text-white font-pixel text-[8px] shrink-0">
+        🏠 MENU
       </button>
-
-      <button id="ctrlStartGameBtn" class="pixel-btn flex-1 py-2.5 px-3 rounded-xl bg-sky-400 text-slate-950 font-pixel text-[10px] sm:text-xs flex items-center justify-center gap-2">
-        ▶ START / ULANG
+      <button data-remote-game="racing" class="remote-game-pill pixel-btn px-2.5 py-1.5 rounded-lg bg-rose-600 text-white font-pixel text-[8px] shrink-0">
+        🏎️ BALAP
+      </button>
+      <button data-remote-game="shooter" class="remote-game-pill pixel-btn px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-pixel text-[8px] shrink-0">
+        🛸 PESAWAT
+      </button>
+      <button data-remote-game="brick" class="remote-game-pill pixel-btn px-2.5 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-pixel text-[8px] shrink-0">
+        🧱 BRICK
+      </button>
+      <button data-remote-game="snake" class="remote-game-pill pixel-btn px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white font-pixel text-[8px] shrink-0">
+        🐍 SNAKE
       </button>
     </div>
 
-    <!-- Main Ergonomic Gamepad Controls (Multi-Touch Enabled) -->
+    <!-- Main Multi-Touch Gamepad Area (Dynamically labeled per active game) -->
     <div id="gamepadTouchArea" class="flex-1 grid grid-cols-2 gap-3 sm:gap-6 items-stretch py-1">
 
-      <!-- Left Side: Steering Controls (or Gyro Indicator) -->
-      <div id="dpadSteeringGroup" class="grid grid-cols-2 gap-2.5 sm:gap-4 h-full">
-        <button id="btnLeft" data-ctrl="left"
-          class="touch-ctrl-btn pixel-btn rounded-2xl bg-slate-800 active:bg-sky-500 border-4 border-slate-600 flex flex-col items-center justify-center text-white">
+      <!-- Left Pad: Directional D-Pad (2-Way or 4-Way depending on game) -->
+      <div id="leftPadContainer" class="grid grid-cols-2 gap-2.5 h-full">
+        <button id="ctrlBtnLeft" data-ctrl="left"
+          class="touch-ctrl-btn pixel-btn rounded-2xl bg-slate-800 border-4 border-slate-600 flex flex-col items-center justify-center text-white">
           <span class="font-pixel text-3xl sm:text-5xl mb-1">◀</span>
-          <span class="font-pixel text-[10px] sm:text-xs text-slate-300">KIRI</span>
+          <span class="font-pixel text-[10px] text-slate-300">KIRI</span>
         </button>
 
-        <button id="btnRight" data-ctrl="right"
-          class="touch-ctrl-btn pixel-btn rounded-2xl bg-slate-800 active:bg-sky-500 border-4 border-slate-600 flex flex-col items-center justify-center text-white">
+        <button id="ctrlBtnRight" data-ctrl="right"
+          class="touch-ctrl-btn pixel-btn rounded-2xl bg-slate-800 border-4 border-slate-600 flex flex-col items-center justify-center text-white">
           <span class="font-pixel text-3xl sm:text-5xl mb-1">▶</span>
-          <span class="font-pixel text-[10px] sm:text-xs text-slate-300">KANAN</span>
+          <span class="font-pixel text-[10px] text-slate-300">KANAN</span>
         </button>
       </div>
 
-      <!-- Gyroscope Steering Visual Feedback (Shown when Tilt Mode is ON) -->
-      <div id="gyroSteeringGroup" class="hidden rounded-2xl bg-slate-900 border-4 border-indigo-500 flex flex-col items-center justify-center p-3 text-center">
-        <div class="font-pixel text-xs text-indigo-300 mb-2">MIRINGKAN HP SEPERTI SETIR!</div>
-        <div class="w-full h-6 bg-slate-950 rounded-full border-2 border-slate-700 relative overflow-hidden">
-          <div id="gyroBarIndicator" class="absolute top-0 bottom-0 w-6 bg-amber-400 rounded-full transition-transform duration-75" style="left: calc(50% - 12px);"></div>
-        </div>
-        <div id="gyroAngleText" class="text-sm text-slate-400 mt-2">Sudut: 0°</div>
+      <!-- 4-Way D-Pad (Shown for Snake Edu Quest) -->
+      <div id="fourWayPadContainer" class="hidden grid grid-cols-3 grid-rows-3 gap-1.5 h-full">
+        <div></div>
+        <button data-ctrl="up" class="touch-ctrl-btn pixel-btn rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center font-pixel text-xl text-white">▲</button>
+        <div></div>
+        <button data-ctrl="left" class="touch-ctrl-btn pixel-btn rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center font-pixel text-xl text-white">◀</button>
+        <div class="rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-center text-xs text-slate-500">D-PAD</div>
+        <button data-ctrl="right" class="touch-ctrl-btn pixel-btn rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center font-pixel text-xl text-white">▶</button>
+        <div></div>
+        <button data-ctrl="down" class="touch-ctrl-btn pixel-btn rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center font-pixel text-xl text-white">▼</button>
+        <div></div>
       </div>
 
-      <!-- Right Side: Pedals (Brake / Nitro / Gas) -->
-      <div class="grid grid-cols-2 gap-2.5 sm:gap-4 h-full">
+      <!-- Right Pad: Adaptive Action Buttons (A & B) -->
+      <div class="grid grid-cols-2 gap-2.5 h-full">
         <div class="flex flex-col gap-2.5 h-full">
-          <button id="btnBoost" data-ctrl="boost"
+          <button id="ctrlBtnB" data-ctrl="actionB"
             class="touch-ctrl-btn pixel-btn flex-1 rounded-2xl bg-cyan-500 border-4 border-cyan-200 flex flex-col items-center justify-center text-slate-950">
-            <span class="text-2xl sm:text-3xl">🔥</span>
-            <span class="font-pixel text-[10px] sm:text-xs">NITRO</span>
+            <span id="ctrlBtnBIcon" class="text-2xl sm:text-3xl">🔥</span>
+            <span id="ctrlBtnBLabel" class="font-pixel text-[10px] sm:text-xs">NITRO</span>
           </button>
 
-          <button id="btnBrake" data-ctrl="brake"
-            class="touch-ctrl-btn pixel-btn h-20 sm:h-24 rounded-2xl bg-rose-600 border-4 border-rose-300 flex flex-col items-center justify-center text-white">
-            <span class="font-pixel text-[10px] sm:text-xs">REM</span>
+          <button id="ctrlBtnSpecial"
+            class="pixel-btn h-16 sm:h-20 rounded-2xl bg-amber-400 border-4 border-amber-200 flex flex-col items-center justify-center text-slate-950">
+            <span id="ctrlBtnSpecLabel" class="font-pixel text-[9px] sm:text-[10px]">📯 KLAKSON / START</span>
           </button>
         </div>
 
-        <button id="btnGas" data-ctrl="gas"
+        <button id="ctrlBtnA" data-ctrl="actionA"
           class="touch-ctrl-btn pixel-btn h-full rounded-2xl bg-emerald-500 border-4 border-emerald-200 flex flex-col items-center justify-center text-slate-950">
-          <span class="font-pixel text-3xl sm:text-5xl mb-2">▲</span>
-          <span class="font-pixel text-xs sm:text-base">GAS</span>
+          <span id="ctrlBtnAIcon" class="font-pixel text-3xl sm:text-5xl mb-1">▲</span>
+          <span id="ctrlBtnALabel" class="font-pixel text-xs sm:text-base">GAS</span>
         </button>
       </div>
     </div>
 
-    <!-- Bottom Orientation Tip -->
-    <div class="text-center text-xs sm:text-sm text-slate-500 pt-1">
-      Tips: Putar HP ke posisi <b>Landscape (Miring)</b> untuk kenyamanan maksimal!
+    <div class="text-center text-xs text-slate-500 pt-1">
+      Nagala Edu Arcade • Putar HP ke posisi <b>Landscape</b> agar lebih nyaman!
     </div>
   </div>
 
   <!-- ===================================================================== -->
-  <!-- APPLICATION LOGIC: FIREBASE SYNC, QR PAIRING, RETRO AUDIO & 16-BIT ENGINE -->
+  <!-- MULTI-GAME ENGINE + WEBRTC P2P CONTROLLER + RETRO AUDIO SYNTHESIZER   -->
   <!-- ===================================================================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -550,150 +679,130 @@
     import { getFirestore, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // =========================================================================
-    // 1. GLOBAL STATE & ENVIRONMENT SETUP
+    // 1. GLOBAL APP & MULTI-GAME CONSOLE STATE
     // =========================================================================
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'pixel-turbo-racer';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'nagala-edu-arcade';
     let db = null;
     let auth = null;
     let currentUser = null;
     let firebaseReady = false;
 
-    // Room & Role State
     const urlParams = new URLSearchParams(window.location.search);
     const initialRoomFromUrl = (urlParams.get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
     let isControllerMode = Boolean(initialRoomFromUrl);
     let roomCode = initialRoomFromUrl || generateRoomCode();
+
+    // Console Navigation State
+    let activeScreen = 'LAUNCHER'; // 'LAUNCHER' | 'GAME'
+    let activeGameId = 'racing';   // 'racing' | 'shooter' | 'brick' | 'snake'
+    let isGameOver = false;
+    const highScores = { racing: 0, shooter: 0, brick: 0, snake: 0 };
+
+    // P2P & Fallback Channel State
     let localChannel = null;
     let roomUnsubscribe = null;
-
-    // Direct WebRTC P2P State (Zero-lag transport for deployed web apps)
     let peerInstance = null;
     let activePeerConn = null;
     let p2pPingMs = null;
     let pingIntervalId = null;
     let peerReconnectTimer = null;
 
-    // Controller Input State (Shared from Phone -> Host)
+    // Unified Input States (Keyboard + Simulator + Phone Controller)
     const remoteInput = {
       left: false,
       right: false,
-      gas: false,
-      brake: false,
-      boost: false,
-      steerAnalog: 0, // -1 to +1 for Tilt Steering
-      hornPulse: 0,
-      startPulse: 0,
+      up: false,
+      down: false,
+      actionA: false,
+      actionB: false,
+      specialPulse: 0,
+      launchGameReq: '',
+      launchPulse: 0,
       connected: false,
       lastSeen: 0
     };
 
-    // Keyboard & Simulator Input State on Host
     const localInput = {
       left: false,
       right: false,
-      gas: false,
-      brake: false,
-      boost: false
+      up: false,
+      down: false,
+      actionA: false,
+      actionB: false
     };
 
-    // Game Simulation State
-    const gameState = {
-      status: 'LOBBY', // 'LOBBY' | 'PLAYING' | 'GAMEOVER'
-      score: 0,
-      bestScore: 0,
-      distance: 0,
-      timeLeft: 60,
-      speed: 0,
-      maxSpeed: 280,
-      nitro: 100,
-      playerX: 0, // -1.0 (left edge) to +1.0 (right edge)
-      steerAngle: 0,
-      carColor: '#ef4444',
-      roadCurve: 0,
-      targetCurve: 0,
-      curveTimer: 0,
-      trackOffset: 0,
-      shakeTimer: 0,
-      flashTimer: 0,
-      biomeIndex: 0,
-      traffic: [],
-      pickups: [],
-      particles: [],
-      lastHornHandled: 0,
-      lastStartHandled: 0
-    };
+    let lastSpecialHandled = 0;
+    let lastLaunchHandled = 0;
+
+    function getUnifiedInput() {
+      const phoneOk = remoteInput.connected && (Date.now() - remoteInput.lastSeen < 15000);
+      return {
+        left: localInput.left || (phoneOk && remoteInput.left),
+        right: localInput.right || (phoneOk && remoteInput.right),
+        up: localInput.up || (phoneOk && remoteInput.up),
+        down: localInput.down || (phoneOk && remoteInput.down),
+        actionA: localInput.actionA || (phoneOk && remoteInput.actionA),
+        actionB: localInput.actionB || (phoneOk && remoteInput.actionB),
+        phoneActive: phoneOk
+      };
+    }
 
     // =========================================================================
-    // 2. UTILITY HELPERS (ROOM PIN, TOAST BANNER, QR CODE GENERATOR)
+    // 2. UTILITY HELPERS (PIN, TOAST, DUAL QR RENDERER)
     // =========================================================================
     let customHostedBaseUrl = '';
     let toastTimeoutId = null;
 
     function generateRoomCode() {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let result = '';
-      for (let i = 0; i < 4; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
+      let out = '';
+      for (let i = 0; i < 4; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+      return out;
     }
 
-    function showToast(message, durationMs = 2600) {
+    function showToast(msg, durationMs = 2500) {
       const banner = document.getElementById('toastBanner');
       const textEl = document.getElementById('toastText');
       if (!banner || !textEl) return;
-
-      textEl.textContent = message;
+      textEl.textContent = msg;
       banner.classList.remove('hidden');
       clearTimeout(toastTimeoutId);
-      toastTimeoutId = setTimeout(() => {
-        banner.classList.add('hidden');
-      }, durationMs);
+      toastTimeoutId = setTimeout(() => banner.classList.add('hidden'), durationMs);
     }
 
-    function renderQrCodeForRoom(code) {
-      const box = document.getElementById('qrCodeBox');
-      const hintEl = document.getElementById('previewUrlHint');
-      if (!box) return;
+    function renderAllQrCodes(code) {
+      document.getElementById('launcherPinCode').textContent = code;
+      document.getElementById('stagePinText').textContent = code;
+      document.getElementById('modalPinText').textContent = code;
 
-      box.innerHTML = '';
       const rawBase = customHostedBaseUrl || window.location.href.split('?')[0];
-      const isHttpUrl = rawBase.startsWith('http://') || rawBase.startsWith('https://');
-      const qrPayload = isHttpUrl
-        ? `${rawBase}?room=${code}`
-        : `PIXEL-TURBO-ROOM:${code}`;
+      const isHttp = rawBase.startsWith('http://') || rawBase.startsWith('https://');
+      const qrPayload = isHttp ? `${rawBase}?room=${code}` : `NAGALA-ARCADE-ROOM:${code}`;
 
-      if (typeof QRCode !== 'undefined') {
-        new QRCode(box, {
-          text: qrPayload,
-          width: 148,
-          height: 148,
-          colorDark: '#0f172a',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      } else {
-        box.innerHTML = `<span class="text-slate-900 font-pixel text-xs p-4">PIN: ${code}</span>`;
-      }
-
-      if (hintEl) {
-        if (isHttpUrl) {
-          hintEl.innerHTML = `
-            <span class="text-emerald-400 font-bold">✓ Siap Scan Kamera HP!</span><br/>
-            Scan QR di atas dengan kamera HP, atau buka link ini di HP dan masukkan PIN <b class="text-amber-300">${code}</b>.
-          `;
+      [
+        { id: 'launcherQrBox', size: 118 },
+        { id: 'modalQrBox', size: 144 }
+      ].forEach(({ id, size }) => {
+        const box = document.getElementById(id);
+        if (!box) return;
+        box.innerHTML = '';
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(box, {
+            text: qrPayload,
+            width: size,
+            height: size,
+            colorDark: '#090d16',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
         } else {
-          hintEl.innerHTML = `
-            1. Buka halaman web game ini di HP.<br/>
-            2. Klik <b>"Saya Kontroler HP"</b>.<br/>
-            3. Tekan <b>Scan QR</b> atau ketik PIN <b class="text-amber-300">${code}</b>.
-          `;
+          box.innerHTML = `<span class="text-slate-900 font-pixel text-xs p-2">PIN: ${code}</span>`;
         }
-      }
+      });
     }
 
     // =========================================================================
-    // 3. RETRO 16-BIT WEB AUDIO SYNTHESIZER (ENGINE, HORN, PICKUP, CRASH)
+    // 3. RETRO 16-BIT WEB AUDIO SYNTHESIZER
     // =========================================================================
     class RetroAudio {
       constructor() {
@@ -705,14 +814,11 @@
 
       init() {
         if (this.ctx) {
-          if (this.ctx.state === 'suspended') {
-            this.ctx.resume().catch(() => {});
-          }
+          if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
           return;
         }
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
-
         try {
           this.ctx = new AudioCtx();
           this.engineOsc = this.ctx.createOscillator();
@@ -720,7 +826,6 @@
           this.engineOsc.type = 'sawtooth';
           this.engineOsc.frequency.value = 55;
           this.engineGain.gain.value = 0;
-
           this.engineOsc.connect(this.engineGain);
           this.engineGain.connect(this.ctx.destination);
           this.engineOsc.start();
@@ -729,54 +834,58 @@
         }
       }
 
-      updateEngine(speedRatio, isRunning, isBoosting) {
+      updateEngine(speedRatio, active, boosting) {
         if (!this.ctx || !this.engineOsc || !this.engineGain) return;
         const now = this.ctx.currentTime;
-        if (this.muted || !isRunning || speedRatio <= 0.02) {
+        if (this.muted || !active || speedRatio <= 0.02) {
           this.engineGain.gain.setTargetAtTime(0, now, 0.06);
           return;
         }
-        const targetFreq = 52 + speedRatio * 135 + (isBoosting ? 48 : 0);
-        this.engineOsc.frequency.setTargetAtTime(targetFreq, now, 0.05);
-        this.engineGain.gain.setTargetAtTime(isBoosting ? 0.055 : 0.038, now, 0.05);
+        this.engineOsc.frequency.setTargetAtTime(52 + speedRatio * 130 + (boosting ? 45 : 0), now, 0.05);
+        this.engineGain.gain.setTargetAtTime(boosting ? 0.05 : 0.032, now, 0.05);
+      }
+
+      playTone(freq, duration = 0.1, type = 'square', vol = 0.08) {
+        this.init();
+        if (!this.ctx || this.muted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration + 0.01);
       }
 
       playHorn() {
+        this.playTone(440, 0.11, 'square', 0.08);
+        setTimeout(() => this.playTone(554.37, 0.14, 'square', 0.08), 120);
+      }
+
+      playLaser() {
         this.init();
         if (!this.ctx || this.muted) return;
         const now = this.ctx.currentTime;
-        [0, 0.14].forEach((offset) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(440, now + offset);
-          osc.frequency.setValueAtTime(554.37, now + offset + 0.04);
-          gain.gain.setValueAtTime(0.08, now + offset);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.11);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + offset);
-          osc.stop(now + offset + 0.12);
-        });
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.09);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
       }
 
       playPickup() {
-        this.init();
-        if (!this.ctx || this.muted) return;
-        const now = this.ctx.currentTime;
-        const notes = [587.33, 880, 1174.66];
-        notes.forEach((freq, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, now + idx * 0.055);
-          gain.gain.setValueAtTime(0.09, now + idx * 0.055);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.12);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + idx * 0.055);
-          osc.stop(now + idx * 0.055 + 0.13);
-        });
+        this.playTone(587.33, 0.08, 'triangle', 0.09);
+        setTimeout(() => this.playTone(880, 0.11, 'triangle', 0.09), 65);
       }
 
       playCrash() {
@@ -786,24 +895,24 @@
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(32, now + 0.28);
-        gain.gain.setValueAtTime(0.14, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.28);
+        gain.gain.setValueAtTime(0.13, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.29);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.31);
+        osc.stop(now + 0.3);
       }
     }
 
     const audio = new RetroAudio();
 
     // =========================================================================
-    // 4. WEBRTC P2P (PRIMARY FAST SYNC) + FIREBASE & BROADCAST FALLBACK
+    // 4. WEBRTC P2P (PRIMARY FAST SYNC) + BROADCAST & FIRESTORE FALLBACK
     // =========================================================================
     function getPeerIdForRoom(code) {
-      return `pixelturbo-v1-${code.toLowerCase()}`;
+      return `nagala-arcade-v1-${code.toLowerCase()}`;
     }
 
     function initPeerHost(code) {
@@ -828,12 +937,11 @@
 
         peerInstance.on('connection', (conn) => {
           activePeerConn = conn;
-
           conn.on('open', () => {
             remoteInput.connected = true;
             remoteInput.lastSeen = Date.now();
             updatePhoneConnectedBadges(true);
-            showToast('⚡ HP Terhubung Direct P2P (Super Cepat!)');
+            showToast('⚡ HP Kontroler Terhubung (P2P Direct!)');
             audio.playPickup();
             syncHostTelemetryToPhone(true);
           });
@@ -847,9 +955,7 @@
                 p2pPingMs = msg.rtt;
                 updatePhoneConnectedBadges(true);
               }
-              try {
-                conn.send({ type: 'PONG', ts: msg.ts });
-              } catch (_) {}
+              try { conn.send({ type: 'PONG', ts: msg.ts }); } catch (_) {}
             }
           });
 
@@ -870,9 +976,7 @@
             initHostRoom(roomCode);
           }
         });
-      } catch (err) {
-        console.warn('PeerJS host init fallback:', err);
-      }
+      } catch (_) {}
     }
 
     function connectPeerController(code) {
@@ -889,7 +993,7 @@
 
       const statusEl = document.getElementById('ctrlConnText');
       const dotEl = document.getElementById('ctrlConnDot');
-      if (statusEl) statusEl.textContent = 'Mencari PC (P2P)...';
+      if (statusEl) statusEl.textContent = 'Mencari Konsol PC...';
       if (dotEl) dotEl.className = 'w-3 h-3 rounded-full bg-amber-400 animate-ping';
 
       try {
@@ -904,7 +1008,6 @@
         });
 
         peerInstance.on('open', () => {
-          if (statusEl) statusEl.textContent = 'Menyambungkan stik ke PC...';
           const conn = peerInstance.connect(getPeerIdForRoom(code), {
             serialization: 'json',
             reliable: true
@@ -913,22 +1016,18 @@
           conn.on('open', () => {
             activePeerConn = conn;
             document.getElementById('pinJoinOverlay').classList.add('hidden');
-            document.getElementById('pinJoinStatusMsg').classList.add('hidden');
             if (statusEl) statusEl.textContent = '⚡ P2P Direct • Aktif!';
             if (dotEl) dotEl.className = 'w-3 h-3 rounded-full bg-emerald-400';
 
             if (navigator.vibrate) {
               try { navigator.vibrate(60); } catch (_) {}
             }
-
             pushControllerState(true);
 
             clearInterval(pingIntervalId);
             pingIntervalId = setInterval(() => {
               if (activePeerConn && activePeerConn.open) {
-                try {
-                  activePeerConn.send({ type: 'PING', ts: Date.now(), rtt: p2pPingMs });
-                } catch (_) {}
+                try { activePeerConn.send({ type: 'PING', ts: Date.now(), rtt: p2pPingMs }); } catch (_) {}
               }
             }, 1500);
           });
@@ -960,54 +1059,9 @@
           if (err && err.type === 'peer-unavailable') {
             if (statusEl) statusEl.textContent = `PIN ${code} belum aktif di PC`;
             showToast(`PIN "${code}" tidak ditemukan! Cek PIN di layar PC.`);
-          } else if (statusEl) {
-            statusEl.textContent = 'Mencoba jalur P2P ulang...';
           }
         });
-      } catch (err) {
-        console.warn('PeerJS controller fallback:', err);
-      }
-    }
-
-    async function initRealtimeBackend() {
-      // 1. Setup BroadcastChannel for instant zero-latency local tab sync
-      setupBroadcastChannel(roomCode);
-
-      // 2. Start Direct WebRTC P2P immediately (works on any deployed site)
-      if (isControllerMode) {
-        connectControllerToRoom(roomCode);
-      } else {
-        initHostRoom(roomCode);
-      }
-
-      // 3. Optional Cloud Firestore fallback if environment config is present
-      try {
-        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-          const firebaseConfig = JSON.parse(__firebase_config);
-          const app = initializeApp(firebaseConfig);
-          auth = getAuth(app);
-          db = getFirestore(app);
-
-          // RULE 3: Auth before any Firestore query
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-          currentUser = auth.currentUser;
-          firebaseReady = Boolean(db && currentUser);
-
-          if (firebaseReady) {
-            if (isControllerMode) {
-              attachControllerFirestoreFallback(roomCode);
-            } else {
-              attachHostFirestoreFallback(roomCode);
-            }
-          }
-        }
-      } catch (err) {
-        firebaseReady = false;
-      }
+      } catch (_) {}
     }
 
     function setupBroadcastChannel(code) {
@@ -1015,7 +1069,7 @@
         try { localChannel.close(); } catch (_) {}
       }
       if ('BroadcastChannel' in window) {
-        localChannel = new BroadcastChannel(`pixel_turbo_${code}`);
+        localChannel = new BroadcastChannel(`nagala_arcade_${code}`);
         localChannel.onmessage = (ev) => {
           const msg = ev.data;
           if (!msg) return;
@@ -1028,65 +1082,73 @@
       }
     }
 
-    // RULE 1: Strict Path under /artifacts/{appId}/public/data/pixel_race_rooms/{roomCode}
     function getRoomDocRef(code) {
-      return doc(db, 'artifacts', appId, 'public', 'data', 'pixel_race_rooms', code);
+      return doc(db, 'artifacts', appId, 'public', 'data', 'nagala_arcade_rooms', code);
     }
 
-    async function initHostRoom(code) {
+    async function initRealtimeBackend() {
+      setupBroadcastChannel(roomCode);
+      if (isControllerMode) {
+        connectControllerToRoom(roomCode);
+      } else {
+        initHostRoom(roomCode);
+      }
+
+      try {
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+          const firebaseConfig = JSON.parse(__firebase_config);
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+          currentUser = auth.currentUser;
+          firebaseReady = Boolean(db && currentUser);
+
+          if (firebaseReady) {
+            if (isControllerMode) attachControllerFirestoreFallback(roomCode);
+            else attachHostFirestoreFallback(roomCode);
+          }
+        }
+      } catch (_) {
+        firebaseReady = false;
+      }
+    }
+
+    function initHostRoom(code) {
       setupBroadcastChannel(code);
-      document.getElementById('hudRoomCode').textContent = code;
-      document.getElementById('lobbyRoomCode').textContent = code;
-      renderQrCodeForRoom(code);
+      renderAllQrCodes(code);
       initPeerHost(code);
       attachHostFirestoreFallback(code);
     }
 
     async function attachHostFirestoreFallback(code) {
       if (!firebaseReady || !currentUser) return;
-
       try {
         const roomRef = getRoomDocRef(code);
         await setDoc(roomRef, {
           roomCode: code,
           hostUid: currentUser.uid,
-          createdAt: Date.now(),
           ctrlConnected: false,
-          left: false,
-          right: false,
-          gas: false,
-          brake: false,
-          boost: false,
-          steerAnalog: 0,
-          hornPulse: 0,
-          startPulse: 0,
-          speed: 0,
-          score: 0,
-          status: gameState.status
+          activeScreen,
+          activeGameId,
+          score: 0
         });
-
         if (roomUnsubscribe) roomUnsubscribe();
-        roomUnsubscribe = onSnapshot(
-          roomRef,
-          (snap) => {
-            if (!snap.exists()) return;
-            const data = snap.data();
-            applyRemoteControllerPayload(data);
-          },
-          (err) => {
-            console.warn('Firestore room listener error:', err);
-          }
-        );
-      } catch (err) {
-        console.warn('Failed to init host room doc:', err);
-      }
+        roomUnsubscribe = onSnapshot(roomRef, (snap) => {
+          if (snap.exists()) applyRemoteControllerPayload(snap.data());
+        }, () => {});
+      } catch (_) {}
     }
 
     function applyRemoteControllerPayload(data) {
       if (!data) return;
       if (data.ctrlConnected) {
         if (!remoteInput.connected) {
-          showToast('📱 HP Kontroler Berhasil Terhubung!');
+          showToast('📱 HP Kontroler Terhubung!');
           audio.playPickup();
         }
         remoteInput.connected = true;
@@ -1096,69 +1158,152 @@
 
       remoteInput.left = Boolean(data.left);
       remoteInput.right = Boolean(data.right);
-      remoteInput.gas = Boolean(data.gas);
-      remoteInput.brake = Boolean(data.brake);
-      remoteInput.boost = Boolean(data.boost);
-      remoteInput.steerAnalog = typeof data.steerAnalog === 'number' ? data.steerAnalog : 0;
+      remoteInput.up = Boolean(data.up);
+      remoteInput.down = Boolean(data.down);
+      remoteInput.actionA = Boolean(data.actionA);
+      remoteInput.actionB = Boolean(data.actionB);
 
-      // Handle remote horn trigger
-      if (data.hornPulse && data.hornPulse !== gameState.lastHornHandled) {
-        gameState.lastHornHandled = data.hornPulse;
-        audio.playHorn();
-        showToast('📯 TIN-TIN! Klakson dari HP!', 1200);
+      // Handle remote game switch requested from Phone Controller
+      if (data.launchPulse && data.launchPulse !== lastLaunchHandled) {
+        lastLaunchHandled = data.launchPulse;
+        if (data.launchGameReq === 'LAUNCHER') {
+          returnToLauncher();
+        } else if (['racing', 'shooter', 'brick', 'snake'].includes(data.launchGameReq)) {
+          launchGame(data.launchGameReq);
+        }
       }
 
-      // Handle remote start/restart trigger
-      if (data.startPulse && data.startPulse !== gameState.lastStartHandled) {
-        gameState.lastStartHandled = data.startPulse;
-        if (gameState.status !== 'PLAYING') {
-          startNewRace();
+      // Handle special pulse (Horn in Racing, Restart if GameOver, Launch Ball in Brick)
+      if (data.specialPulse && data.specialPulse !== lastSpecialHandled) {
+        lastSpecialHandled = data.specialPulse;
+        if (activeScreen === 'GAME') {
+          if (isGameOver) {
+            launchGame(activeGameId);
+          } else if (activeGameId === 'racing') {
+            audio.playHorn();
+            showToast('📯 TIN-TIN! Klakson dari HP!', 1100);
+          } else if (activeGameId === 'brick') {
+            brickState.ballLaunched = true;
+          } else if (activeGameId === 'snake' && snakeState.quizActive) {
+            answerEduQuiz(0);
+          }
         }
       }
     }
 
     function updatePhoneConnectedBadges(isConnected) {
-      const dot = document.getElementById('phoneStatusDot');
-      const label = document.getElementById('phoneStatusLabel');
-      const lobbyStatus = document.getElementById('lobbyPhoneStatus');
+      const dots = document.querySelectorAll('.phone-dot');
+      const labels = document.querySelectorAll('.phone-label');
       const pingText = typeof p2pPingMs === 'number' ? ` (${p2pPingMs}ms)` : '';
 
-      if (isConnected) {
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-        label.textContent = `⚡ HP P2P${pingText}`;
-        label.className = 'text-emerald-400 font-bold';
-        if (lobbyStatus) {
-          lobbyStatus.innerHTML = `<span class="inline-block w-3 h-3 rounded-full bg-emerald-400"></span><span class="text-emerald-400">HP Terkoneksi Direct P2P${pingText}!</span>`;
-        }
-      } else {
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
-        label.textContent = 'Menunggu HP';
-        label.className = 'text-slate-300 font-bold';
-        if (lobbyStatus) {
-          lobbyStatus.innerHTML = `<span class="inline-block w-3 h-3 rounded-full bg-amber-400 animate-ping"></span><span>Belum ada HP terhubung...</span>`;
-        }
-      }
+      dots.forEach((d) => {
+        d.className = isConnected
+          ? 'phone-dot w-2.5 h-2.5 rounded-full bg-emerald-400'
+          : 'phone-dot w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+      });
+      labels.forEach((l) => {
+        l.textContent = isConnected ? `⚡ HP P2P${pingText}` : 'Menunggu HP';
+        l.className = isConnected ? 'phone-label text-emerald-400 font-bold' : 'phone-label text-slate-300 font-bold';
+      });
     }
 
     // =========================================================================
-    // 6. MOBILE PHONE CONTROLLER LOGIC (TOUCH, GYRO, HAPTICS, SYNC)
+    // 5. ADAPTIVE MOBILE PHONE CONTROLLER LOGIC
     // =========================================================================
     const ctrlState = {
       left: false,
       right: false,
-      gas: false,
-      brake: false,
-      boost: false,
-      steerAnalog: 0,
-      hornPulse: 0,
-      startPulse: 0,
-      tiltEnabled: false
+      up: false,
+      down: false,
+      actionA: false,
+      actionB: false,
+      specialPulse: 0,
+      launchGameReq: '',
+      launchPulse: 0
     };
 
-    let lastSyncTimestamp = 0;
+    let lastSyncTs = 0;
     let pendingSyncTimer = null;
     let qrVideoStream = null;
     let qrScanAnimFrame = null;
+
+    function adaptControllerLayoutForGame(screen, gameId) {
+      const tagEl = document.getElementById('ctrlActiveGameTag');
+      const twoWayPad = document.getElementById('leftPadContainer');
+      const fourWayPad = document.getElementById('fourWayPadContainer');
+      const btnAIcon = document.getElementById('ctrlBtnAIcon');
+      const btnALabel = document.getElementById('ctrlBtnALabel');
+      const btnBIcon = document.getElementById('ctrlBtnBIcon');
+      const btnBLabel = document.getElementById('ctrlBtnBLabel');
+      const specLabel = document.getElementById('ctrlBtnSpecLabel');
+
+      // Highlight active game pill
+      document.querySelectorAll('.remote-game-pill').forEach((pill) => {
+        const target = pill.dataset.remoteGame;
+        const isCurrent = (screen === 'LAUNCHER' && target === 'LAUNCHER') || (screen === 'GAME' && target === gameId);
+        pill.classList.toggle('ring-2', isCurrent);
+        pill.classList.toggle('ring-white', isCurrent);
+      });
+
+      if (screen === 'LAUNCHER') {
+        if (tagEl) tagEl.textContent = 'MENU UTAMA';
+        twoWayPad.classList.remove('hidden');
+        fourWayPad.classList.add('hidden');
+        btnAIcon.textContent = '▶';
+        btnALabel.textContent = 'PILIH';
+        btnBIcon.textContent = '🎮';
+        btnBLabel.textContent = 'MULAI';
+        specLabel.textContent = '🏎️ MAIN BALAP';
+        return;
+      }
+
+      if (gameId === 'snake') {
+        if (tagEl) tagEl.textContent = 'SNAKE EDU';
+        twoWayPad.classList.add('hidden');
+        fourWayPad.classList.remove('hidden');
+        btnAIcon.textContent = '⚡';
+        btnALabel.textContent = 'DASH';
+        btnBIcon.textContent = '🎓';
+        btnBLabel.textContent = 'JAWAB';
+        specLabel.textContent = '↻ ULANG / JAWAB';
+      } else if (gameId === 'shooter') {
+        if (tagEl) tagEl.textContent = 'GALAXY SHOOTER';
+        twoWayPad.classList.remove('hidden');
+        fourWayPad.classList.add('hidden');
+        btnAIcon.textContent = '🔫';
+        btnALabel.textContent = 'TEMBAK';
+        btnBIcon.textContent = '💥';
+        btnBLabel.textContent = 'BOM NOVA';
+        specLabel.textContent = '↻ MAIN ULANG';
+      } else if (gameId === 'brick') {
+        if (tagEl) tagEl.textContent = 'BRICK BREAKER';
+        twoWayPad.classList.remove('hidden');
+        fourWayPad.classList.add('hidden');
+        btnAIcon.textContent = '🚀';
+        btnALabel.textContent = 'LEPAS / TEMBAK';
+        btnBIcon.textContent = '⚡';
+        btnBLabel.textContent = 'CEPAT';
+        specLabel.textContent = '🚀 LUNCURKAN BOLA';
+      } else {
+        if (tagEl) tagEl.textContent = 'PIXEL TURBO';
+        twoWayPad.classList.remove('hidden');
+        fourWayPad.classList.add('hidden');
+        btnAIcon.textContent = '▲';
+        btnALabel.textContent = 'GAS';
+        btnBIcon.textContent = '🔥';
+        btnBLabel.textContent = 'NITRO';
+        specLabel.textContent = '📯 KLAKSON / START';
+      }
+    }
+
+    function updateControllerTelemetryUI(data) {
+      if (!data) return;
+      const scrEl = document.getElementById('ctrlScoreVal');
+      if (scrEl && typeof data.score === 'number') scrEl.textContent = Math.floor(data.score);
+      if (data.activeScreen && data.activeGameId) {
+        adaptControllerLayoutForGame(data.activeScreen, data.activeGameId);
+      }
+    }
 
     function stopInAppQrScanner() {
       if (qrScanAnimFrame) {
@@ -1166,7 +1311,7 @@
         qrScanAnimFrame = null;
       }
       if (qrVideoStream) {
-        qrVideoStream.getTracks().forEach((track) => track.stop());
+        qrVideoStream.getTracks().forEach((t) => t.stop());
         qrVideoStream = null;
       }
       const box = document.getElementById('qrScannerBox');
@@ -1180,45 +1325,41 @@
       if (!box || !video || !scanCanvas) return;
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showToast('Kamera tidak didukung di browser ini. Ketik 4 kode PIN saja!');
+        showToast('Kamera tidak tersedia di browser ini. Ketik 4 kode PIN saja!');
         return;
       }
 
       try {
-        qrVideoStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }
-        });
+        qrVideoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         video.srcObject = qrVideoStream;
         await video.play();
         box.classList.remove('hidden');
 
-        const scanCtx = scanCanvas.getContext('2d');
+        const sCtx = scanCanvas.getContext('2d');
         const tickScan = () => {
           if (!qrVideoStream) return;
           if (video.readyState === video.HAVE_ENOUGH_DATA && typeof jsQR !== 'undefined') {
             scanCanvas.width = video.videoWidth;
             scanCanvas.height = video.videoHeight;
-            scanCtx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
-            const imgData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-            const codeObj = jsQR(imgData.data, imgData.width, imgData.height, {
-              inversionAttempts: 'dontInvert'
-            });
+            sCtx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+            const imgData = sCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+            const codeObj = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
 
             if (codeObj && codeObj.data) {
               const raw = codeObj.data.trim();
-              let extractedPin = '';
+              let pin = '';
               const urlMatch = raw.match(/[?&]room=([A-Za-z0-9]{4})/i);
-              const prefixMatch = raw.match(/PIXEL-TURBO-ROOM:([A-Za-z0-9]{4})/i);
-              if (urlMatch) extractedPin = urlMatch[1].toUpperCase();
-              else if (prefixMatch) extractedPin = prefixMatch[1].toUpperCase();
-              else if (/^[A-Za-z0-9]{4}$/.test(raw)) extractedPin = raw.toUpperCase();
+              const prefixMatch = raw.match(/NAGALA-ARCADE-ROOM:([A-Za-z0-9]{4})/i);
+              if (urlMatch) pin = urlMatch[1].toUpperCase();
+              else if (prefixMatch) pin = prefixMatch[1].toUpperCase();
+              else if (/^[A-Za-z0-9]{4}$/.test(raw)) pin = raw.toUpperCase();
 
-              if (extractedPin.length === 4) {
+              if (pin.length === 4) {
                 stopInAppQrScanner();
-                document.getElementById('manualPinInput').value = extractedPin;
+                document.getElementById('manualPinInput').value = pin;
                 document.getElementById('pinJoinOverlay').classList.add('hidden');
-                showToast(`✅ QR Terbaca! Menghubungkan ke PIN ${extractedPin}...`);
-                connectControllerToRoom(extractedPin);
+                showToast(`✅ QR Terbaca! Menyambungkan ke PIN ${pin}...`);
+                connectControllerToRoom(pin);
                 return;
               }
             }
@@ -1226,15 +1367,16 @@
           qrScanAnimFrame = requestAnimationFrame(tickScan);
         };
         qrScanAnimFrame = requestAnimationFrame(tickScan);
-      } catch (err) {
+      } catch (_) {
         stopInAppQrScanner();
-        showToast('Izin kamera ditolak/tidak tersedia. Silakan ketik 4 kode PIN di bawah.');
+        showToast('Izin kamera ditolak. Silakan ketik 4 kode PIN di bawah.');
       }
     }
 
     function switchToControllerView(targetCode) {
       isControllerMode = true;
-      document.getElementById('hostView').classList.add('hidden');
+      document.getElementById('launcherView').classList.add('hidden');
+      document.getElementById('gameStageView').classList.add('hidden');
       document.getElementById('controllerView').classList.remove('hidden');
 
       if (targetCode && targetCode.length === 4) {
@@ -1246,15 +1388,15 @@
       }
     }
 
-    function switchToHostView() {
+    function switchToHostLauncherView() {
       stopInAppQrScanner();
       isControllerMode = false;
       document.getElementById('controllerView').classList.add('hidden');
-      document.getElementById('hostView').classList.remove('hidden');
+      returnToLauncher();
       initHostRoom(roomCode);
     }
 
-    async function connectControllerToRoom(code) {
+    function connectControllerToRoom(code) {
       roomCode = code.toUpperCase();
       setupBroadcastChannel(roomCode);
       document.getElementById('ctrlRoomLabel').textContent = roomCode;
@@ -1267,28 +1409,10 @@
       try {
         const roomRef = getRoomDocRef(code);
         if (roomUnsubscribe) roomUnsubscribe();
-        roomUnsubscribe = onSnapshot(
-          roomRef,
-          (snap) => {
-            if (!snap.exists()) return;
-            const data = snap.data();
-            if (!activePeerConn || !activePeerConn.open) {
-              document.getElementById('ctrlConnText').textContent = 'Cloud Backup • Aktif';
-              document.getElementById('ctrlConnDot').className = 'w-3 h-3 rounded-full bg-emerald-400';
-            }
-            updateControllerTelemetryUI(data);
-          },
-          () => {}
-        );
+        roomUnsubscribe = onSnapshot(roomRef, (snap) => {
+          if (snap.exists()) updateControllerTelemetryUI(snap.data());
+        }, () => {});
       } catch (_) {}
-    }
-
-    function updateControllerTelemetryUI(data) {
-      if (!data) return;
-      const spdEl = document.getElementById('ctrlSpeedVal');
-      const scrEl = document.getElementById('ctrlScoreVal');
-      if (spdEl && typeof data.speed === 'number') spdEl.textContent = Math.round(data.speed);
-      if (scrEl && typeof data.score === 'number') scrEl.textContent = Math.floor(data.score);
     }
 
     function pushControllerState(forceImmediate = false) {
@@ -1296,118 +1420,73 @@
         ctrlConnected: true,
         left: ctrlState.left,
         right: ctrlState.right,
-        gas: ctrlState.gas,
-        brake: ctrlState.brake,
-        boost: ctrlState.boost,
-        steerAnalog: ctrlState.steerAnalog,
-        hornPulse: ctrlState.hornPulse,
-        startPulse: ctrlState.startPulse
+        up: ctrlState.up,
+        down: ctrlState.down,
+        actionA: ctrlState.actionA,
+        actionB: ctrlState.actionB,
+        specialPulse: ctrlState.specialPulse,
+        launchGameReq: ctrlState.launchGameReq,
+        launchPulse: ctrlState.launchPulse
       };
 
-      // 1. PRIMARY: Direct WebRTC P2P DataChannel (~5-15ms zero-throttle instant delivery)
       const hasOpenP2P = Boolean(activePeerConn && activePeerConn.open);
       if (hasOpenP2P) {
-        try {
-          activePeerConn.send({ type: 'CTRL_INPUT', payload });
-        } catch (_) {}
+        try { activePeerConn.send({ type: 'CTRL_INPUT', payload }); } catch (_) {}
       }
-
-      // 2. Instant local BroadcastChannel
       if (localChannel) {
-        try {
-          localChannel.postMessage({ type: 'CTRL_INPUT', payload });
-        } catch (_) {}
+        try { localChannel.postMessage({ type: 'CTRL_INPUT', payload }); } catch (_) {}
       }
 
-      // 3. Cloud Firestore backup (only when P2P is not active so it never adds lag)
       if (hasOpenP2P || !firebaseReady || !currentUser || !roomCode) return;
       const now = Date.now();
-      const elapsed = now - lastSyncTimestamp;
-
-      const sendToFirestore = async () => {
-        lastSyncTimestamp = Date.now();
-        try {
-          const roomRef = getRoomDocRef(roomCode);
-          await updateDoc(roomRef, payload);
-        } catch (err) {
-          // If doc wasn't created yet, create it with setDoc merge
-          try {
-            const roomRef = getRoomDocRef(roomCode);
-            await setDoc(roomRef, payload, { merge: true });
-          } catch (_) {}
-        }
+      const elapsed = now - lastSyncTs;
+      const sendCloud = async () => {
+        lastSyncTs = Date.now();
+        try { await updateDoc(getRoomDocRef(roomCode), payload); } catch (_) {}
       };
-
       if (forceImmediate || elapsed >= 55) {
         clearTimeout(pendingSyncTimer);
-        sendToFirestore();
+        sendCloud();
       } else {
         clearTimeout(pendingSyncTimer);
-        pendingSyncTimer = setTimeout(sendToFirestore, 55 - elapsed);
+        pendingSyncTimer = setTimeout(sendCloud, 55 - elapsed);
       }
     }
 
-    // Multi-Touch Gamepad Handler (Supports holding GAS + steering LEFT/RIGHT simultaneously)
     function setupMultiTouchGamepad() {
       const area = document.getElementById('gamepadTouchArea');
       if (!area) return;
-
       const buttons = Array.from(document.querySelectorAll('.touch-ctrl-btn'));
 
       function evaluateTouches(touchList) {
-        const nextState = { left: false, right: false, gas: false, brake: false, boost: false };
-
+        const next = { left: false, right: false, up: false, down: false, actionA: false, actionB: false };
         for (let i = 0; i < touchList.length; i++) {
           const t = touchList[i];
           const el = document.elementFromPoint(t.clientX, t.clientY);
           const btn = el ? el.closest('.touch-ctrl-btn') : null;
-          if (btn && btn.dataset.ctrl) {
-            nextState[btn.dataset.ctrl] = true;
-          }
+          if (btn && btn.dataset.ctrl) next[btn.dataset.ctrl] = true;
         }
-
         let changed = false;
-        ['left', 'right', 'gas', 'brake', 'boost'].forEach((key) => {
-          if (ctrlState[key] !== nextState[key]) {
-            ctrlState[key] = nextState[key];
+        Object.keys(next).forEach((k) => {
+          if (ctrlState[k] !== next[k]) {
+            ctrlState[k] = next[k];
             changed = true;
-            if (nextState[key] && navigator.vibrate) {
-              try { navigator.vibrate(18); } catch (_) {}
+            if (next[k] && navigator.vibrate) {
+              try { navigator.vibrate(16); } catch (_) {}
             }
           }
         });
-
-        buttons.forEach((btn) => {
-          const k = btn.dataset.ctrl;
-          btn.classList.toggle('pressed', Boolean(ctrlState[k]));
-        });
-
-        if (changed) {
-          pushControllerState(true);
-        }
+        buttons.forEach((b) => b.classList.toggle('pressed', Boolean(ctrlState[b.dataset.ctrl])));
+        if (changed) pushControllerState(true);
       }
 
-      area.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        evaluateTouches(e.touches);
-      }, { passive: false });
+      ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach((evtName) => {
+        area.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          evaluateTouches(e.touches);
+        }, { passive: false });
+      });
 
-      area.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        evaluateTouches(e.touches);
-      }, { passive: false });
-
-      area.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        evaluateTouches(e.touches);
-      }, { passive: false });
-
-      area.addEventListener('touchcancel', (e) => {
-        e.preventDefault();
-        evaluateTouches(e.touches);
-      }, { passive: false });
-
-      // Mouse fallback for desktop testing of Controller View
       buttons.forEach((btn) => {
         const key = btn.dataset.ctrl;
         btn.addEventListener('mousedown', () => {
@@ -1415,86 +1494,23 @@
           btn.classList.add('pressed');
           pushControllerState(true);
         });
-        const release = () => {
+        const rel = () => {
           if (ctrlState[key]) {
             ctrlState[key] = false;
             btn.classList.remove('pressed');
             pushControllerState(true);
           }
         };
-        btn.addEventListener('mouseup', release);
-        btn.addEventListener('mouseleave', release);
+        btn.addEventListener('mouseup', rel);
+        btn.addEventListener('mouseleave', rel);
       });
     }
 
-    // Gyroscope / Tilt Steering Handler on Mobile
-    function handleDeviceOrientation(event) {
-      if (!ctrlState.tiltEnabled) return;
-      // In landscape mode, beta controls left/right tilt; in portrait, gamma controls left/right
-      const isLandscape = window.innerWidth > window.innerHeight;
-      let rawAngle = isLandscape ? (event.beta || 0) : (event.gamma || 0);
-
-      // Clamp between -35 and +35 degrees with a small 4-degree deadzone
-      if (Math.abs(rawAngle) < 4) rawAngle = 0;
-      const clamped = Math.max(-35, Math.min(35, rawAngle));
-      const normalized = Number((clamped / 35).toFixed(2));
-
-      if (Math.abs(normalized - ctrlState.steerAnalog) >= 0.04) {
-        ctrlState.steerAnalog = normalized;
-        const bar = document.getElementById('gyroBarIndicator');
-        const txt = document.getElementById('gyroAngleText');
-        if (bar) bar.style.transform = `translateX(${normalized * 90}px)`;
-        if (txt) txt.textContent = `Sudut Setir: ${Math.round(clamped)}°`;
-        pushControllerState(false);
-      }
-    }
-
-    async function toggleTiltSteering() {
-      const btn = document.getElementById('toggleTiltBtn');
-      const dpad = document.getElementById('dpadSteeringGroup');
-      const gyroBox = document.getElementById('gyroSteeringGroup');
-
-      if (!ctrlState.tiltEnabled) {
-        // Request iOS 13+ DeviceOrientation permission if applicable
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          try {
-            const resp = await DeviceOrientationEvent.requestPermission();
-            if (resp !== 'granted') {
-              showToast('Izin sensor kemiringan ditolak browser.');
-              return;
-            }
-          } catch (err) {
-            showToast('Sensor kemiringan tidak tersedia di perangkat ini.');
-            return;
-          }
-        }
-        ctrlState.tiltEnabled = true;
-        window.addEventListener('deviceorientation', handleDeviceOrientation);
-        btn.textContent = '📐 SETIR MIRING: ON';
-        btn.classList.replace('bg-indigo-600', 'bg-amber-500');
-        btn.classList.replace('text-white', 'text-slate-950');
-        dpad.classList.add('hidden');
-        gyroBox.classList.remove('hidden');
-      } else {
-        ctrlState.tiltEnabled = false;
-        ctrlState.steerAnalog = 0;
-        window.removeEventListener('deviceorientation', handleDeviceOrientation);
-        btn.textContent = '📐 SETIR MIRING: OFF';
-        btn.classList.replace('bg-amber-500', 'bg-indigo-600');
-        btn.classList.replace('text-slate-950', 'text-white');
-        gyroBox.classList.add('hidden');
-        dpad.classList.remove('hidden');
-        pushControllerState(true);
-      }
-    }
-
     // =========================================================================
-    // 7. 16-BIT PSEUDO-3D PIXEL RACING ENGINE (CANVAS RENDERER)
+    // 6. CANVAS SETUP & MULTI-GAME ENGINES (4 COMPLETE GAMES)
     // =========================================================================
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-
-    // Internal low-res arcade resolution for crisp pixel-art look
     const VIRT_W = 360;
     const VIRT_H = 240;
 
@@ -1506,659 +1522,933 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Biomes that cycle as player drives further
-    const BIOMES = [
-      {
-        name: 'PANTAI TROPIS',
-        skyTop: '#0284c7',
-        skyBottom: '#7dd3fc',
-        grassLight: '#fde047',
-        grassDark: '#facc15',
-        roadLight: '#334155',
-        roadDark: '#1e293b',
-        rumbleLight: '#ef4444',
-        rumbleDark: '#ffffff',
-        propType: 'palm'
-      },
-      {
-        name: 'KOTA NEON MALAM',
-        skyTop: '#090d16',
-        skyBottom: '#311042',
-        grassLight: '#1e1b4b',
-        grassDark: '#17153b',
-        roadLight: '#1e293b',
-        roadDark: '#0f172a',
-        rumbleLight: '#06b6d4',
-        rumbleDark: '#f43f5e',
-        propType: 'neon'
-      },
-      {
-        name: 'GURUN SENJA',
-        skyTop: '#9a3412',
-        skyBottom: '#fb923c',
-        grassLight: '#d97706',
-        grassDark: '#b45309',
-        roadLight: '#44403c',
-        roadDark: '#292524',
-        rumbleLight: '#f59e0b',
-        rumbleDark: '#fef3c7',
-        propType: 'cactus'
+    let currentScore = 0;
+
+    function triggerGameOver(titleText, subtitleText) {
+      isGameOver = true;
+      audio.updateEngine(0, false, false);
+      if (currentScore > highScores[activeGameId]) {
+        highScores[activeGameId] = Math.floor(currentScore);
       }
-    ];
-
-    function startNewRace() {
-      audio.init();
-      gameState.status = 'PLAYING';
-      gameState.score = 0;
-      gameState.distance = 0;
-      gameState.timeLeft = 60;
-      gameState.speed = 60;
-      gameState.nitro = 100;
-      gameState.playerX = 0;
-      gameState.steerAngle = 0;
-      gameState.roadCurve = 0;
-      gameState.targetCurve = 0;
-      gameState.traffic = [];
-      gameState.pickups = [];
-      gameState.particles = [];
-      gameState.shakeTimer = 0;
-
-      document.getElementById('lobbyOverlay').classList.add('hidden');
-      document.getElementById('gameOverOverlay').classList.add('hidden');
-      syncHostTelemetryToPhone(true);
-    }
-
-    function endRace() {
-      gameState.status = 'GAMEOVER';
-      if (gameState.score > gameState.bestScore) {
-        gameState.bestScore = Math.floor(gameState.score);
-      }
-      document.getElementById('finalScoreText').textContent = Math.floor(gameState.score);
-      document.getElementById('finalDistText').textContent = `${Math.floor(gameState.distance)} M`;
-      document.getElementById('bestScoreText').textContent = gameState.bestScore;
+      document.getElementById('gameOverTitle').textContent = titleText;
+      document.getElementById('gameOverSubtitle').textContent = subtitleText;
+      document.getElementById('finalScoreText').textContent = Math.floor(currentScore);
+      document.getElementById('bestScoreText').textContent = highScores[activeGameId];
       document.getElementById('gameOverOverlay').classList.remove('hidden');
       syncHostTelemetryToPhone(true);
     }
 
-    // Spawn Traffic Cars & Nitro/Coin Pickups
-    let spawnAccumulator = 0;
-    function updateTrafficAndPickups(dt) {
-      spawnAccumulator += dt * (gameState.speed / 120);
-      if (spawnAccumulator > 1.05) {
-        spawnAccumulator = 0;
-        const lanes = [-0.62, 0, 0.62];
+    function updateTopHud(score, m2Label, m2Val, m3Label, m3Val) {
+      currentScore = score;
+      document.getElementById('hudScore').textContent = String(Math.floor(score)).padStart(5, '0');
+      document.getElementById('hudMetric2Label').textContent = m2Label;
+      document.getElementById('hudMetric2Val').textContent = m2Val;
+      document.getElementById('hudMetric3Label').textContent = m3Label;
+      document.getElementById('hudMetric3Val').textContent = m3Val;
+    }
+
+    // -------------------------------------------------------------------------
+    // GAME A: PIXEL TURBO RACER
+    // -------------------------------------------------------------------------
+    const raceState = {
+      timeLeft: 60,
+      speed: 70,
+      nitro: 100,
+      playerX: 0,
+      steerAngle: 0,
+      roadCurve: 0,
+      targetCurve: 0,
+      curveTimer: 0,
+      trackOffset: 0,
+      biomeIndex: 0,
+      traffic: [],
+      pickups: [],
+      spawnAcc: 0,
+      shakeTimer: 0
+    };
+
+    const RACE_BIOMES = [
+      { name: 'PANTAI TROPIS', skyTop: '#0284c7', skyBot: '#7dd3fc', grass1: '#fde047', grass2: '#facc15', road1: '#334155', road2: '#1e293b', rumb1: '#ef4444', rumb2: '#ffffff' },
+      { name: 'KOTA NEON', skyTop: '#090d16', skyBot: '#311042', grass1: '#1e1b4b', grass2: '#17153b', road1: '#1e293b', road2: '#0f172a', rumb1: '#06b6d4', rumb2: '#f43f5e' },
+      { name: 'GURUN SENJA', skyTop: '#9a3412', skyBot: '#fb923c', grass1: '#d97706', grass2: '#b45309', road1: '#44403c', road2: '#292524', rumb1: '#f59e0b', rumb2: '#fef3c7' }
+    ];
+
+    function initRacingGame() {
+      Object.assign(raceState, {
+        timeLeft: 60, speed: 75, nitro: 100, playerX: 0, steerAngle: 0,
+        roadCurve: 0, targetCurve: 0, curveTimer: 2, trackOffset: 0,
+        biomeIndex: 0, traffic: [], pickups: [], spawnAcc: 0, shakeTimer: 0
+      });
+      currentScore = 0;
+    }
+
+    function updateRacingGame(dt) {
+      const inp = getUnifiedInput();
+      raceState.timeLeft -= dt;
+      if (raceState.timeLeft <= 0) {
+        raceState.timeLeft = 0;
+        triggerGameOver('WAKTU HABIS!', 'Balapan Pixel Turbo Selesai!');
+        return;
+      }
+
+      const boosting = inp.actionB && raceState.nitro > 2 && (inp.actionA || raceState.speed > 40);
+      if (boosting) raceState.nitro = Math.max(0, raceState.nitro - 28 * dt);
+      else raceState.nitro = Math.min(100, raceState.nitro + 7 * dt);
+
+      const topSpd = boosting ? 330 : 275;
+      if (inp.actionA || boosting) {
+        raceState.speed += (boosting ? 185 : 115) * dt;
+      } else if (inp.down) {
+        raceState.speed -= 200 * dt;
+      } else {
+        const minCruise = inp.phoneActive ? 80 : 0;
+        raceState.speed += (raceState.speed > minCruise ? -45 : 45) * dt;
+      }
+
+      if (Math.abs(raceState.playerX) > 1.05) raceState.speed -= 125 * dt;
+      raceState.speed = Math.max(0, Math.min(topSpd, raceState.speed));
+
+      let steer = 0;
+      if (inp.left) steer -= 1;
+      if (inp.right) steer += 1;
+      raceState.playerX += steer * 1.75 * (0.35 + (raceState.speed / 275) * 0.75) * dt;
+      raceState.playerX -= raceState.roadCurve * (raceState.speed / 280) * 0.65 * dt;
+      raceState.playerX = Math.max(-1.35, Math.min(1.35, raceState.playerX));
+      raceState.steerAngle = steer;
+
+      raceState.curveTimer -= dt;
+      if (raceState.curveTimer <= 0) {
+        raceState.curveTimer = 2.5 + Math.random() * 2.5;
+        raceState.targetCurve = (Math.random() - 0.5) * 1.3;
+      }
+      raceState.roadCurve += (raceState.targetCurve - raceState.roadCurve) * dt * 1.2;
+
+      const distDelta = (raceState.speed / 3.6) * dt;
+      currentScore += distDelta * (boosting ? 4.5 : 2.3);
+      raceState.trackOffset += raceState.speed * dt * 0.055;
+      raceState.biomeIndex = Math.floor(currentScore / 1800) % RACE_BIOMES.length;
+      if (raceState.shakeTimer > 0) raceState.shakeTimer -= dt;
+
+      // Spawn Traffic & Pickups
+      raceState.spawnAcc += dt * (raceState.speed / 120);
+      if (raceState.spawnAcc > 1.05) {
+        raceState.spawnAcc = 0;
+        const lanes = [-0.6, 0, 0.6];
         const lane = lanes[Math.floor(Math.random() * lanes.length)];
-
         if (Math.random() < 0.72) {
-          const colors = ['#38bdf8', '#a855f7', '#f97316', '#ec4899', '#e2e8f0'];
-          gameState.traffic.push({
-            x: lane,
-            z: 1.0, // 1.0 = horizon, 0.0 = camera/player
-            speed: 55 + Math.random() * 55,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            isPolice: Math.random() < 0.2
-          });
+          const cols = ['#38bdf8', '#a855f7', '#f97316', '#ec4899'];
+          raceState.traffic.push({ x: lane, z: 1.0, speed: 55 + Math.random() * 50, color: cols[Math.floor(Math.random() * cols.length)] });
         } else {
-          gameState.pickups.push({
-            x: lane,
-            z: 1.0,
-            type: Math.random() < 0.45 ? 'nitro' : 'coin'
-          });
+          raceState.pickups.push({ x: lane, z: 1.0, type: Math.random() < 0.45 ? 'nitro' : 'coin' });
         }
       }
 
-      // Move Traffic
-      for (let i = gameState.traffic.length - 1; i >= 0; i--) {
-        const car = gameState.traffic[i];
-        const relSpeed = (gameState.speed - car.speed) / 260;
-        car.z -= relSpeed * dt * 0.85;
-
-        // Collision check near player (z between 0.06 and 0.16)
-        if (car.z > 0.06 && car.z < 0.16 && Math.abs(car.x - gameState.playerX) < 0.34) {
+      for (let i = raceState.traffic.length - 1; i >= 0; i--) {
+        const c = raceState.traffic[i];
+        c.z -= ((raceState.speed - c.speed) / 260) * dt * 0.85;
+        if (c.z > 0.06 && c.z < 0.16 && Math.abs(c.x - raceState.playerX) < 0.34) {
           audio.playCrash();
-          gameState.speed = Math.max(35, gameState.speed * 0.42);
-          gameState.shakeTimer = 0.35;
-          gameState.flashTimer = 0.2;
-          spawnExplosionParticles(VIRT_W / 2 + gameState.playerX * 95, VIRT_H - 36, '#f97316');
-          gameState.traffic.splice(i, 1);
+          raceState.speed = Math.max(35, raceState.speed * 0.45);
+          raceState.shakeTimer = 0.3;
+          raceState.traffic.splice(i, 1);
           continue;
         }
-
-        if (car.z < -0.1 || car.z > 1.2) {
-          gameState.traffic.splice(i, 1);
-        }
+        if (c.z < -0.1 || c.z > 1.2) raceState.traffic.splice(i, 1);
       }
 
-      // Move Pickups
-      for (let i = gameState.pickups.length - 1; i >= 0; i--) {
-        const item = gameState.pickups[i];
-        const relSpeed = gameState.speed / 260;
-        item.z -= relSpeed * dt * 0.85;
-
-        if (item.z > 0.05 && item.z < 0.18 && Math.abs(item.x - gameState.playerX) < 0.36) {
+      for (let i = raceState.pickups.length - 1; i >= 0; i--) {
+        const it = raceState.pickups[i];
+        it.z -= (raceState.speed / 260) * dt * 0.85;
+        if (it.z > 0.05 && it.z < 0.18 && Math.abs(it.x - raceState.playerX) < 0.36) {
           audio.playPickup();
-          if (item.type === 'nitro') {
-            gameState.nitro = Math.min(100, gameState.nitro + 38);
-            gameState.score += 150;
-            spawnExplosionParticles(VIRT_W / 2 + gameState.playerX * 95, VIRT_H - 36, '#22d3ee');
+          if (it.type === 'nitro') {
+            raceState.nitro = Math.min(100, raceState.nitro + 38);
+            currentScore += 150;
           } else {
-            gameState.score += 250;
-            spawnExplosionParticles(VIRT_W / 2 + gameState.playerX * 95, VIRT_H - 36, '#facc15');
+            currentScore += 250;
           }
-          gameState.pickups.splice(i, 1);
+          raceState.pickups.splice(i, 1);
           continue;
         }
-
-        if (item.z < -0.1) {
-          gameState.pickups.splice(i, 1);
-        }
+        if (it.z < -0.1) raceState.pickups.splice(i, 1);
       }
+
+      audio.updateEngine(raceState.speed / 300, true, boosting);
+      updateTopHud(currentScore, 'SPEED', `${Math.round(raceState.speed)} KM/H`, 'WAKTU', `${Math.ceil(raceState.timeLeft)}S`);
     }
 
-    function spawnExplosionParticles(px, py, color) {
-      for (let i = 0; i < 14; i++) {
-        gameState.particles.push({
-          x: px,
-          y: py,
-          vx: (Math.random() - 0.5) * 140,
-          vy: (Math.random() - 0.8) * 120,
-          life: 0.4 + Math.random() * 0.25,
-          color
-        });
-      }
-    }
-
-    // Main Physics & Input Update
-    function updateGame(dt) {
-      // Combine Keyboard + Simulator + Phone Remote Inputs
-      const phoneActive = remoteInput.connected && (Date.now() - remoteInput.lastSeen < 15000);
-      const goLeft = localInput.left || (phoneActive && remoteInput.left);
-      const goRight = localInput.right || (phoneActive && remoteInput.right);
-      const goGas = localInput.gas || (phoneActive && remoteInput.gas);
-      const goBrake = localInput.brake || (phoneActive && remoteInput.brake);
-      const wantBoost = localInput.boost || (phoneActive && remoteInput.boost);
-      const analogSteer = phoneActive ? remoteInput.steerAnalog : 0;
-
-      // In Lobby mode, run an attract-mode AI demo drive!
-      if (gameState.status === 'LOBBY') {
-        gameState.speed = 110;
-        gameState.trackOffset += gameState.speed * dt * 0.045;
-        gameState.curveTimer += dt;
-        gameState.roadCurve = Math.sin(gameState.curveTimer * 0.7) * 0.45;
-        gameState.playerX = Math.sin(gameState.curveTimer * 1.1) * 0.25;
-        audio.updateEngine(0, false, false);
-        return;
-      }
-
-      if (gameState.status !== 'PLAYING') {
-        audio.updateEngine(0, false, false);
-        return;
-      }
-
-      // Countdown Timer
-      gameState.timeLeft -= dt;
-      if (gameState.timeLeft <= 0) {
-        gameState.timeLeft = 0;
-        endRace();
-        return;
-      }
-
-      // Nitro Boost Logic
-      const isBoosting = wantBoost && gameState.nitro > 2 && (goGas || gameState.speed > 40);
-      if (isBoosting) {
-        gameState.nitro = Math.max(0, gameState.nitro - 28 * dt);
-      } else {
-        gameState.nitro = Math.min(100, gameState.nitro + 7 * dt);
-      }
-
-      // Acceleration & Braking
-      const currentTopSpeed = isBoosting ? 335 : gameState.maxSpeed;
-      if (goGas || isBoosting) {
-        gameState.speed += (isBoosting ? 185 : 115) * dt;
-      } else if (goBrake) {
-        gameState.speed -= 210 * dt;
-      } else {
-        // Gentle coasting deceleration (or auto-cruise minimum if phone is connected so kids/casuals can steer easily)
-        const minCruise = phoneActive ? 75 : 0;
-        if (gameState.speed > minCruise) {
-          gameState.speed -= 48 * dt;
-        } else {
-          gameState.speed += 50 * dt;
-        }
-      }
-
-      // Off-road slowdown
-      if (Math.abs(gameState.playerX) > 1.05) {
-        gameState.speed -= 130 * dt;
-        if (Math.random() < 0.35) {
-          spawnExplosionParticles(VIRT_W / 2 + gameState.playerX * 95, VIRT_H - 22, '#fde047');
-        }
-      }
-
-      gameState.speed = Math.max(0, Math.min(currentTopSpeed, gameState.speed));
-
-      // Steering
-      let steerInput = 0;
-      if (goLeft) steerInput -= 1;
-      if (goRight) steerInput += 1;
-      if (Math.abs(analogSteer) > 0.05) steerInput = analogSteer;
-
-      const steerResponsiveness = 1.75 * (0.35 + (gameState.speed / gameState.maxSpeed) * 0.75);
-      gameState.playerX += steerInput * steerResponsiveness * dt;
-
-      // Centrifugal pull on curves
-      gameState.playerX -= gameState.roadCurve * (gameState.speed / 280) * 0.65 * dt;
-      gameState.playerX = Math.max(-1.35, Math.min(1.35, gameState.playerX));
-      gameState.steerAngle = steerInput;
-
-      // Dynamic Road Curves & Biomes
-      gameState.curveTimer -= dt;
-      if (gameState.curveTimer <= 0) {
-        gameState.curveTimer = 2.5 + Math.random() * 3.0;
-        gameState.targetCurve = (Math.random() - 0.5) * 1.35;
-      }
-      gameState.roadCurve += (gameState.targetCurve - gameState.roadCurve) * dt * 1.2;
-
-      // Distance & Score Progression
-      const metersDelta = (gameState.speed / 3.6) * dt;
-      gameState.distance += metersDelta;
-      gameState.score += metersDelta * (isBoosting ? 4.5 : 2.2);
-      gameState.trackOffset += gameState.speed * dt * 0.055;
-      gameState.biomeIndex = Math.floor(gameState.distance / 750) % BIOMES.length;
-
-      if (gameState.shakeTimer > 0) gameState.shakeTimer -= dt;
-      if (gameState.flashTimer > 0) gameState.flashTimer -= dt;
-
-      updateTrafficAndPickups(dt);
-
-      // Update Particles
-      for (let i = gameState.particles.length - 1; i >= 0; i--) {
-        const p = gameState.particles[i];
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.life -= dt;
-        if (p.life <= 0) gameState.particles.splice(i, 1);
-      }
-
-      // Update Audio
-      audio.updateEngine(gameState.speed / 300, true, isBoosting);
-
-      // Update HUD
-      document.getElementById('hudScore').textContent = String(Math.floor(gameState.score)).padStart(5, '0');
-      document.getElementById('hudSpeed').textContent = Math.round(gameState.speed);
-      document.getElementById('hudNitroBar').style.width = `${Math.round(gameState.nitro)}%`;
-    }
-
-    // =========================================================================
-    // 8. PIXEL-ART SPRITE & PSEUDO-3D ROAD RENDERER
-    // =========================================================================
-    function renderGame() {
-      const biome = BIOMES[gameState.biomeIndex];
+    function renderRacingGame() {
+      const b = RACE_BIOMES[raceState.biomeIndex];
       const horizonY = 92;
-
       ctx.save();
-      if (gameState.shakeTimer > 0) {
-        const sx = Math.round((Math.random() - 0.5) * 6);
-        const sy = Math.round((Math.random() - 0.5) * 6);
-        ctx.translate(sx, sy);
+      if (raceState.shakeTimer > 0) {
+        ctx.translate(Math.round((Math.random() - 0.5) * 6), Math.round((Math.random() - 0.5) * 6));
       }
 
-      // 1. Pixel Sky Gradient
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
-      skyGrad.addColorStop(0, biome.skyTop);
-      skyGrad.addColorStop(1, biome.skyBottom);
-      ctx.fillStyle = skyGrad;
+      const sky = ctx.createLinearGradient(0, 0, 0, horizonY);
+      sky.addColorStop(0, b.skyTop);
+      sky.addColorStop(1, b.skyBot);
+      ctx.fillStyle = sky;
       ctx.fillRect(0, 0, VIRT_W, horizonY);
 
-      // Sun / Moon & Distant Pixel Mountains
-      ctx.fillStyle = biome.name === 'KOTA NEON MALAM' ? '#f43f5e' : '#fef08a';
+      ctx.fillStyle = '#fef08a';
       ctx.beginPath();
-      ctx.arc(VIRT_W * 0.75 - gameState.roadCurve * 25, 42, 16, 0, Math.PI * 2);
+      ctx.arc(VIRT_W * 0.75 - raceState.roadCurve * 25, 42, 15, 0, Math.PI * 2);
       ctx.fill();
 
-      // Pixel Mountain Silhouette
-      ctx.fillStyle = biome.name === 'KOTA NEON MALAM' ? '#1e1b4b' : '#475569';
-      for (let mx = -40; mx < VIRT_W + 40; mx += 36) {
-        const shift = ((mx - gameState.roadCurve * 35) % (VIRT_W + 72));
-        const mh = 18 + Math.abs(Math.sin(mx * 0.13)) * 22;
-        ctx.fillRect(Math.round(shift), Math.round(horizonY - mh), 28, Math.round(mh));
-      }
+      const roadH = VIRT_H - horizonY;
+      for (let y = 0; y < roadH; y++) {
+        const sy = horizonY + y;
+        const p = (y + 1) / roadH;
+        const phase = Math.floor((1 / p) * 2.2 + raceState.trackOffset) % 2 === 0;
+        ctx.fillStyle = phase ? b.grass1 : b.grass2;
+        ctx.fillRect(0, sy, VIRT_W, 1);
 
-      // 2. Scanline Pseudo-3D Road & Grass Stripes
-      const roadHeight = VIRT_H - horizonY;
-      for (let y = 0; y < roadHeight; y++) {
-        const screenY = horizonY + y;
-        // Perspective depth factor (0 near horizon -> 1 at bottom)
-        const perspective = (y + 1) / roadHeight;
-        const zDepth = 1 / perspective;
+        const curveOff = raceState.roadCurve * Math.pow(1 - p, 2) * 130;
+        const cx = VIRT_W / 2 + curveOff - raceState.playerX * p * 95;
+        const hw = 14 + p * 132;
+        const rw = Math.max(2, p * 12);
 
-        // Alternating stripe phase for sense of speed
-        const stripePhase = Math.floor(zDepth * 2.2 + gameState.trackOffset) % 2 === 0;
+        ctx.fillStyle = phase ? b.rumb1 : b.rumb2;
+        ctx.fillRect(Math.round(cx - hw - rw), sy, Math.round((hw + rw) * 2), 1);
 
-        // Grass / Ground row
-        ctx.fillStyle = stripePhase ? biome.grassLight : biome.grassDark;
-        ctx.fillRect(0, screenY, VIRT_W, 1);
+        ctx.fillStyle = phase ? b.road1 : b.road2;
+        ctx.fillRect(Math.round(cx - hw), sy, Math.round(hw * 2), 1);
 
-        // Road center X shifts with curve & player offset
-        const curveOffset = gameState.roadCurve * Math.pow(1 - perspective, 2) * 130;
-        const roadCenterX = VIRT_W / 2 + curveOffset - gameState.playerX * perspective * 95;
-        const halfRoadW = 14 + perspective * 132;
-        const rumbleW = Math.max(2, perspective * 12);
-
-        // Rumble strips
-        ctx.fillStyle = stripePhase ? biome.rumbleLight : biome.rumbleDark;
-        ctx.fillRect(Math.round(roadCenterX - halfRoadW - rumbleW), screenY, Math.round((halfRoadW + rumbleW) * 2), 1);
-
-        // Asphalt surface
-        ctx.fillStyle = stripePhase ? biome.roadLight : biome.roadDark;
-        ctx.fillRect(Math.round(roadCenterX - halfRoadW), screenY, Math.round(halfRoadW * 2), 1);
-
-        // Dashed Lane Dividers
-        if (stripePhase && perspective > 0.08) {
+        if (phase && p > 0.08) {
           ctx.fillStyle = '#f8fafc';
-          const laneW = Math.max(1, Math.round(perspective * 3));
-          ctx.fillRect(Math.round(roadCenterX - halfRoadW * 0.34), screenY, laneW, 1);
-          ctx.fillRect(Math.round(roadCenterX + halfRoadW * 0.34), screenY, laneW, 1);
+          const lw = Math.max(1, Math.round(p * 3));
+          ctx.fillRect(Math.round(cx - hw * 0.34), sy, lw, 1);
+          ctx.fillRect(Math.round(cx + hw * 0.34), sy, lw, 1);
         }
       }
 
-      // 3. Roadside Pixel Props (Palm Trees, Neon Towers, Cacti)
-      for (let i = 12; i >= 1; i--) {
-        const zFrac = ((i - (gameState.trackOffset * 0.35) % 1) / 12);
-        if (zFrac <= 0.03 || zFrac > 1) continue;
-        const screenY = Math.round(horizonY + zFrac * roadHeight);
-        const curveOffset = gameState.roadCurve * Math.pow(1 - zFrac, 2) * 130;
-        const roadCenterX = VIRT_W / 2 + curveOffset - gameState.playerX * zFrac * 95;
-        const halfRoadW = 14 + zFrac * 132;
-        const scale = 0.25 + zFrac * 1.15;
-
-        drawRoadsideProp(Math.round(roadCenterX - halfRoadW - 22 * scale), screenY, scale, biome.propType);
-        drawRoadsideProp(Math.round(roadCenterX + halfRoadW + 22 * scale), screenY, scale, biome.propType);
-      }
-
-      // 4. Pickups (Coins & Nitro Orbs)
-      gameState.pickups.forEach((item) => {
-        const p = 1 - item.z;
+      raceState.pickups.forEach((it) => {
+        const p = 1 - it.z;
         if (p <= 0.02 || p > 1.05) return;
-        const screenY = Math.round(horizonY + p * roadHeight);
-        const curveOffset = gameState.roadCurve * Math.pow(1 - p, 2) * 130;
-        const roadCenterX = VIRT_W / 2 + curveOffset - gameState.playerX * p * 95;
-        const halfRoadW = 14 + p * 132;
-        const sx = Math.round(roadCenterX + item.x * halfRoadW);
-        const size = Math.max(4, Math.round(p * 16));
-
-        ctx.fillStyle = item.type === 'nitro' ? '#06b6d4' : '#facc15';
-        ctx.fillRect(sx - size / 2, screenY - size, size, size);
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(sx - size / 2, screenY - size, size, size);
+        const sy = Math.round(horizonY + p * roadH);
+        const cx = VIRT_W / 2 + raceState.roadCurve * Math.pow(1 - p, 2) * 130 - raceState.playerX * p * 95;
+        const sx = Math.round(cx + it.x * (14 + p * 132));
+        const sz = Math.max(4, Math.round(p * 15));
+        ctx.fillStyle = it.type === 'nitro' ? '#06b6d4' : '#facc15';
+        ctx.fillRect(sx - sz / 2, sy - sz, sz, sz);
       });
 
-      // 5. Rival Traffic Cars (Sorted far-to-near)
-      const sortedTraffic = [...gameState.traffic].sort((a, b) => b.z - a.z);
-      sortedTraffic.forEach((car) => {
-        const p = 1 - car.z;
+      [...raceState.traffic].sort((a, b2) => b2.z - a.z).forEach((c) => {
+        const p = 1 - c.z;
         if (p <= 0.02 || p > 1.05) return;
-        const screenY = Math.round(horizonY + p * roadHeight);
-        const curveOffset = gameState.roadCurve * Math.pow(1 - p, 2) * 130;
-        const roadCenterX = VIRT_W / 2 + curveOffset - gameState.playerX * p * 95;
-        const halfRoadW = 14 + p * 132;
-        const sx = Math.round(roadCenterX + car.x * halfRoadW);
-
-        drawPixelCar(sx, screenY, p * 1.15, car.color, 0, false, car.isPolice);
+        const sy = Math.round(horizonY + p * roadH);
+        const cx = VIRT_W / 2 + raceState.roadCurve * Math.pow(1 - p, 2) * 130 - raceState.playerX * p * 95;
+        const sx = Math.round(cx + c.x * (14 + p * 132));
+        drawPixelCar(sx, sy, p * 1.15, c.color, 0, false);
       });
 
-      // 6. Player Pixel Car at Bottom Center
-      const playerScreenX = Math.round(VIRT_W / 2 + gameState.playerX * 32);
-      const playerScreenY = VIRT_H - 14;
-      const isBoosting = (localInput.boost || remoteInput.boost) && gameState.nitro > 2 && gameState.status === 'PLAYING';
-      drawPixelCar(playerScreenX, playerScreenY, 1.25, gameState.carColor, gameState.steerAngle, isBoosting, false);
-
-      // 7. Particles (Sparks, Dust, Boost Flames)
-      gameState.particles.forEach((pt) => {
-        ctx.fillStyle = pt.color;
-        ctx.fillRect(Math.round(pt.x), Math.round(pt.y), 3, 3);
-      });
-
-      // 8. In-Canvas Arcade Timer & Biome Tag (When Playing)
-      if (gameState.status === 'PLAYING') {
-        ctx.fillStyle = 'rgba(9, 11, 18, 0.75)';
-        ctx.fillRect(VIRT_W / 2 - 34, 6, 68, 22);
-        ctx.strokeStyle = '#38bdf8';
-        ctx.strokeRect(VIRT_W / 2 - 34, 6, 68, 22);
-
-        ctx.fillStyle = gameState.timeLeft <= 10 ? '#f43f5e' : '#facc15';
-        ctx.font = 'bold 12px "Press Start 2P", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(String(Math.ceil(gameState.timeLeft)).padStart(2, '0'), VIRT_W / 2, 22);
-
-        // Biome badge top-left
-        ctx.fillStyle = 'rgba(9, 11, 18, 0.65)';
-        ctx.fillRect(6, 6, 98, 14);
-        ctx.fillStyle = '#e2e8f0';
-        ctx.font = '9px "VT323", monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(`STAGE: ${biome.name}`, 10, 16);
-      }
-
-      // Red damage flash
-      if (gameState.flashTimer > 0) {
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.28)';
-        ctx.fillRect(0, 0, VIRT_W, VIRT_H);
-      }
-
+      const px = Math.round(VIRT_W / 2 + raceState.playerX * 32);
+      const boosting = getUnifiedInput().actionB && raceState.nitro > 2;
+      drawPixelCar(px, VIRT_H - 14, 1.25, '#ef4444', raceState.steerAngle, boosting);
       ctx.restore();
     }
 
-    function drawRoadsideProp(x, y, scale, type) {
-      if (x < -30 || x > VIRT_W + 30) return;
-      const w = Math.max(3, Math.round(6 * scale));
-      const h = Math.max(8, Math.round(28 * scale));
-
-      if (type === 'palm') {
-        ctx.fillStyle = '#78350f';
-        ctx.fillRect(x - w / 2, y - h, w, h);
-        ctx.fillStyle = '#16a34a';
-        ctx.fillRect(x - w * 2.2, y - h - w, w * 4.4, w * 1.4);
-      } else if (type === 'neon') {
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(x - w * 1.4, y - h * 1.5, w * 2.8, h * 1.5);
-        ctx.fillStyle = '#ec4899';
-        ctx.fillRect(x - w, y - h * 1.2, w * 2, Math.max(2, w * 0.7));
-      } else {
-        ctx.fillStyle = '#15803d';
-        ctx.fillRect(x - w / 2, y - h * 0.9, w, h * 0.9);
-        ctx.fillRect(x - w * 1.4, y - h * 0.6, w * 2.8, Math.max(2, w * 0.6));
-      }
-    }
-
-    function drawPixelCar(cx, bottomY, scale, bodyColor, steer, isBoosting, isPolice) {
+    function drawPixelCar(cx, bottomY, scale, color, steer, boosting) {
       const w = Math.round(34 * scale);
       const h = Math.round(18 * scale);
       const x = Math.round(cx - w / 2 + steer * 3);
       const y = Math.round(bottomY - h);
-
-      // Ground shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-      ctx.fillRect(x - 2, bottomY - 3, w + 4, 4);
-
-      // Tires
       ctx.fillStyle = '#090b12';
-      const tireW = Math.max(3, Math.round(5 * scale));
-      const tireH = Math.max(4, Math.round(7 * scale));
-      ctx.fillRect(x - 1, bottomY - tireH, tireW, tireH);
-      ctx.fillRect(x + w - tireW + 1, bottomY - tireH, tireW, tireH);
-
-      // Lower Chassis
-      ctx.fillStyle = bodyColor;
+      ctx.fillRect(x - 1, bottomY - 6, 5, 6);
+      ctx.fillRect(x + w - 4, bottomY - 6, 5, 6);
+      ctx.fillStyle = color;
       ctx.fillRect(x, y + Math.round(h * 0.35), w, Math.round(h * 0.55));
-
-      // Cabin / Roof
-      const cabinW = Math.round(w * 0.64);
-      const cabinX = Math.round(cx - cabinW / 2 + steer * 4);
-      ctx.fillStyle = isPolice ? '#ffffff' : bodyColor;
-      ctx.fillRect(cabinX, y, cabinW, Math.round(h * 0.42));
-
-      // Rear Windshield
+      ctx.fillRect(Math.round(cx - w * 0.32 + steer * 4), y, Math.round(w * 0.64), Math.round(h * 0.42));
       ctx.fillStyle = '#0f172a';
-      ctx.fillRect(cabinX + 2, y + 2, cabinW - 4, Math.max(2, Math.round(h * 0.25)));
-
-      // Police Siren Bar
-      if (isPolice) {
-        const blink = Math.floor(Date.now() / 140) % 2 === 0;
-        ctx.fillStyle = blink ? '#ef4444' : '#3b82f6';
-        ctx.fillRect(cabinX + 3, y - 3, Math.round(cabinW / 2) - 3, 3);
-        ctx.fillStyle = blink ? '#3b82f6' : '#ef4444';
-        ctx.fillRect(cabinX + Math.round(cabinW / 2), y - 3, Math.round(cabinW / 2) - 3, 3);
-      }
-
-      // Tail Lights
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(x + 2, y + Math.round(h * 0.48), Math.max(3, Math.round(6 * scale)), Math.max(2, Math.round(3 * scale)));
-      ctx.fillRect(x + w - Math.max(5, Math.round(8 * scale)), y + Math.round(h * 0.48), Math.max(3, Math.round(6 * scale)), Math.max(2, Math.round(3 * scale)));
-
-      // Nitro Exhaust Flames
-      if (isBoosting) {
+      ctx.fillRect(Math.round(cx - w * 0.32 + steer * 4) + 2, y + 2, Math.round(w * 0.64) - 4, Math.max(2, Math.round(h * 0.24)));
+      if (boosting) {
         ctx.fillStyle = Math.random() < 0.5 ? '#22d3ee' : '#facc15';
-        const flameH = Math.round((6 + Math.random() * 6) * scale);
-        ctx.fillRect(x + 5, bottomY - 2, 4, flameH);
-        ctx.fillRect(x + w - 9, bottomY - 2, 4, flameH);
+        ctx.fillRect(x + 5, bottomY - 2, 4, 7);
+        ctx.fillRect(x + w - 9, bottomY - 2, 4, 7);
       }
     }
 
-    // Periodically send live telemetry back to connected Phone Controller
+    // -------------------------------------------------------------------------
+    // GAME B: GALAXY DEFENDER (SPACE SHOOTER)
+    // -------------------------------------------------------------------------
+    const shooterState = {
+      shipX: VIRT_W / 2,
+      hp: 3,
+      novaBombs: 2,
+      fireCooldown: 0,
+      bombCooldown: 0,
+      doubleLaserTimer: 0,
+      bullets: [],
+      enemies: [],
+      enemyBullets: [],
+      stars: [],
+      spawnTimer: 0,
+      wave: 1
+    };
+
+    function initShooterGame() {
+      shooterState.shipX = VIRT_W / 2;
+      shooterState.hp = 3;
+      shooterState.novaBombs = 2;
+      shooterState.fireCooldown = 0;
+      shooterState.bombCooldown = 0;
+      shooterState.doubleLaserTimer = 0;
+      shooterState.bullets = [];
+      shooterState.enemies = [];
+      shooterState.enemyBullets = [];
+      shooterState.spawnTimer = 0.5;
+      shooterState.wave = 1;
+      shooterState.stars = Array.from({ length: 35 }, () => ({
+        x: Math.random() * VIRT_W,
+        y: Math.random() * VIRT_H,
+        spd: 20 + Math.random() * 55
+      }));
+      currentScore = 0;
+    }
+
+    function updateShooterGame(dt) {
+      audio.updateEngine(0, false, false);
+      const inp = getUnifiedInput();
+
+      // Starfield scroll
+      shooterState.stars.forEach((s) => {
+        s.y += s.spd * dt;
+        if (s.y > VIRT_H) { s.y = 0; s.x = Math.random() * VIRT_W; }
+      });
+
+      // Ship movement
+      const moveSpd = 175;
+      if (inp.left) shooterState.shipX -= moveSpd * dt;
+      if (inp.right) shooterState.shipX += moveSpd * dt;
+      shooterState.shipX = Math.max(18, Math.min(VIRT_W - 18, shooterState.shipX));
+
+      if (shooterState.fireCooldown > 0) shooterState.fireCooldown -= dt;
+      if (shooterState.bombCooldown > 0) shooterState.bombCooldown -= dt;
+      if (shooterState.doubleLaserTimer > 0) shooterState.doubleLaserTimer -= dt;
+
+      // Laser Fire (Hold Action A or Space, or auto-assisted when moving with phone)
+      if ((inp.actionA || inp.up) && shooterState.fireCooldown <= 0) {
+        shooterState.fireCooldown = 0.16;
+        audio.playLaser();
+        if (shooterState.doubleLaserTimer > 0) {
+          shooterState.bullets.push({ x: shooterState.shipX - 7, y: VIRT_H - 28 });
+          shooterState.bullets.push({ x: shooterState.shipX + 7, y: VIRT_H - 28 });
+        } else {
+          shooterState.bullets.push({ x: shooterState.shipX, y: VIRT_H - 28 });
+        }
+      }
+
+      // Nova Bomb (Action B)
+      if (inp.actionB && shooterState.novaBombs > 0 && shooterState.bombCooldown <= 0) {
+        shooterState.novaBombs--;
+        shooterState.bombCooldown = 1.2;
+        audio.playCrash();
+        currentScore += shooterState.enemies.length * 100;
+        shooterState.enemies = [];
+        shooterState.enemyBullets = [];
+        showToast('💥 BOM NOVA MELEDAK!');
+      }
+
+      // Update Player Bullets
+      for (let i = shooterState.bullets.length - 1; i >= 0; i--) {
+        const b = shooterState.bullets[i];
+        b.y -= 290 * dt;
+        if (b.y < -10) shooterState.bullets.splice(i, 1);
+      }
+
+      // Spawn Aliens
+      shooterState.spawnTimer -= dt;
+      if (shooterState.spawnTimer <= 0) {
+        shooterState.wave = 1 + Math.floor(currentScore / 1500);
+        shooterState.spawnTimer = Math.max(0.42, 1.15 - shooterState.wave * 0.08);
+        const isPowerup = Math.random() < 0.14;
+        shooterState.enemies.push({
+          x: 20 + Math.random() * (VIRT_W - 40),
+          y: -14,
+          vy: 42 + shooterState.wave * 8 + Math.random() * 25,
+          vx: (Math.random() - 0.5) * 45,
+          hp: isPowerup ? 1 : (Math.random() < 0.25 ? 2 : 1),
+          isPowerup
+        });
+      }
+
+      // Update Enemies
+      for (let i = shooterState.enemies.length - 1; i >= 0; i--) {
+        const en = shooterState.enemies[i];
+        en.y += en.vy * dt;
+        en.x += en.vx * dt;
+        if (en.x < 16 || en.x > VIRT_W - 16) en.vx *= -1;
+
+        // Bullet hit check
+        let destroyed = false;
+        for (let j = shooterState.bullets.length - 1; j >= 0; j--) {
+          const b = shooterState.bullets[j];
+          if (Math.abs(b.x - en.x) < 13 && Math.abs(b.y - en.y) < 12) {
+            shooterState.bullets.splice(j, 1);
+            en.hp--;
+            if (en.hp <= 0) {
+              destroyed = true;
+              if (en.isPowerup) {
+                shooterState.doubleLaserTimer = 8;
+                audio.playPickup();
+                showToast('⚡ DOUBLE LASER AKTIF!');
+              } else {
+                audio.playTone(220, 0.08, 'sawtooth', 0.07);
+                currentScore += 120;
+              }
+            }
+            break;
+          }
+        }
+        if (destroyed) {
+          shooterState.enemies.splice(i, 1);
+          continue;
+        }
+
+        // Ship collision or bottom breach
+        if (Math.abs(en.x - shooterState.shipX) < 16 && Math.abs(en.y - (VIRT_H - 20)) < 15) {
+          shooterState.enemies.splice(i, 1);
+          if (en.isPowerup) {
+            shooterState.doubleLaserTimer = 8;
+            audio.playPickup();
+          } else {
+            shooterState.hp--;
+            audio.playCrash();
+            if (shooterState.hp <= 0) {
+              triggerGameOver('PESAWAT HANCUR!', 'Armada Alien Menembus Pertahanan!');
+              return;
+            }
+          }
+          continue;
+        }
+
+        if (en.y > VIRT_H + 16) {
+          shooterState.enemies.splice(i, 1);
+        }
+      }
+
+      updateTopHud(currentScore, 'NYAWA', '❤️'.repeat(shooterState.hp), 'NOVA', `${shooterState.novaBombs} BOM`);
+    }
+
+    function renderShooterGame() {
+      ctx.fillStyle = '#060814';
+      ctx.fillRect(0, 0, VIRT_W, VIRT_H);
+
+      // Stars
+      ctx.fillStyle = '#cbd5e1';
+      shooterState.stars.forEach((s) => ctx.fillRect(Math.round(s.x), Math.round(s.y), 2, 2));
+
+      // Bullets
+      ctx.fillStyle = '#22d3ee';
+      shooterState.bullets.forEach((b) => ctx.fillRect(Math.round(b.x - 1.5), Math.round(b.y - 6), 3, 8));
+
+      // Enemies & Powerups
+      shooterState.enemies.forEach((en) => {
+        const x = Math.round(en.x);
+        const y = Math.round(en.y);
+        if (en.isPowerup) {
+          ctx.fillStyle = '#facc15';
+          ctx.fillRect(x - 7, y - 7, 14, 14);
+          ctx.fillStyle = '#090d16';
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('P', x, y + 3);
+        } else {
+          ctx.fillStyle = en.hp > 1 ? '#f43f5e' : '#a855f7';
+          ctx.fillRect(x - 10, y - 6, 20, 10);
+          ctx.fillRect(x - 6, y - 10, 12, 4);
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(x - 5, y - 3, 3, 3);
+          ctx.fillRect(x + 2, y - 3, 3, 3);
+        }
+      });
+
+      // Player Starfighter
+      const sx = Math.round(shooterState.shipX);
+      const sy = VIRT_H - 20;
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(sx - 3, sy - 12, 6, 20);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(sx - 12, sy - 2, 24, 8);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(sx - 12, sy - 6, 3, 6);
+      ctx.fillRect(sx + 9, sy - 6, 3, 6);
+    }
+
+    // -------------------------------------------------------------------------
+    // GAME C: BRICK BREAKER NEO
+    // -------------------------------------------------------------------------
+    const brickState = {
+      paddleX: VIRT_W / 2,
+      paddleW: 54,
+      ballX: VIRT_W / 2,
+      ballY: VIRT_H - 34,
+      ballVx: 110,
+      ballVy: -130,
+      ballLaunched: false,
+      lives: 3,
+      bricks: [],
+      level: 1
+    };
+
+    function buildBrickGrid(level) {
+      const colors = ['#f43f5e', '#fb923c', '#facc15', '#34d399', '#38bdf8'];
+      const list = [];
+      const rows = Math.min(6, 4 + Math.floor((level - 1) / 2));
+      const cols = 9;
+      const bw = 34;
+      const bh = 10;
+      const startX = (VIRT_W - (cols * (bw + 3) - 3)) / 2;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          list.push({
+            x: startX + c * (bw + 3),
+            y: 26 + r * (bh + 3),
+            w: bw,
+            h: bh,
+            color: colors[r % colors.length]
+          });
+        }
+      }
+      brickState.bricks = list;
+    }
+
+    function initBrickGame() {
+      brickState.paddleX = VIRT_W / 2;
+      brickState.paddleW = 54;
+      brickState.ballLaunched = false;
+      brickState.lives = 3;
+      brickState.level = 1;
+      currentScore = 0;
+      buildBrickGrid(1);
+    }
+
+    function updateBrickGame(dt) {
+      audio.updateEngine(0, false, false);
+      const inp = getUnifiedInput();
+      const padSpd = inp.actionB ? 270 : 195;
+
+      if (inp.left) brickState.paddleX -= padSpd * dt;
+      if (inp.right) brickState.paddleX += padSpd * dt;
+      brickState.paddleX = Math.max(brickState.paddleW / 2 + 6, Math.min(VIRT_W - brickState.paddleW / 2 - 6, brickState.paddleX));
+
+      if (!brickState.ballLaunched) {
+        brickState.ballX = brickState.paddleX;
+        brickState.ballY = VIRT_H - 28;
+        if (inp.actionA || inp.up) {
+          brickState.ballLaunched = true;
+          brickState.ballVx = (Math.random() < 0.5 ? -1 : 1) * (105 + brickState.level * 12);
+          brickState.ballVy = -(135 + brickState.level * 12);
+          audio.playPickup();
+        }
+        updateTopHud(currentScore, 'NYAWA', '❤️'.repeat(brickState.lives), 'STAGE', `LV ${brickState.level}`);
+        return;
+      }
+
+      brickState.ballX += brickState.ballVx * dt;
+      brickState.ballY += brickState.ballVy * dt;
+
+      // Wall bounces
+      if (brickState.ballX < 6) { brickState.ballX = 6; brickState.ballVx = Math.abs(brickState.ballVx); audio.playTone(320, 0.05); }
+      if (brickState.ballX > VIRT_W - 6) { brickState.ballX = VIRT_W - 6; brickState.ballVx = -Math.abs(brickState.ballVx); audio.playTone(320, 0.05); }
+      if (brickState.ballY < 6) { brickState.ballY = 6; brickState.ballVy = Math.abs(brickState.ballVy); audio.playTone(360, 0.05); }
+
+      // Paddle bounce
+      if (
+        brickState.ballVy > 0 &&
+        brickState.ballY >= VIRT_H - 24 &&
+        brickState.ballY <= VIRT_H - 14 &&
+        Math.abs(brickState.ballX - brickState.paddleX) <= brickState.paddleW / 2 + 4
+      ) {
+        const hitOffset = (brickState.ballX - brickState.paddleX) / (brickState.paddleW / 2);
+        brickState.ballVx = hitOffset * 165;
+        brickState.ballVy = -Math.abs(brickState.ballVy);
+        audio.playTone(480, 0.06, 'triangle');
+      }
+
+      // Brick collisions
+      for (let i = brickState.bricks.length - 1; i >= 0; i--) {
+        const br = brickState.bricks[i];
+        if (
+          brickState.ballX + 4 >= br.x &&
+          brickState.ballX - 4 <= br.x + br.w &&
+          brickState.ballY + 4 >= br.y &&
+          brickState.ballY - 4 <= br.y + br.h
+        ) {
+          brickState.bricks.splice(i, 1);
+          brickState.ballVy *= -1;
+          currentScore += 100;
+          audio.playTone(640, 0.06, 'square');
+          break;
+        }
+      }
+
+      // Stage Clear check
+      if (brickState.bricks.length === 0) {
+        brickState.level++;
+        brickState.ballLaunched = false;
+        currentScore += 500;
+        audio.playPickup();
+        buildBrickGrid(brickState.level);
+        showToast(`🎉 STAGE ${brickState.level} TERBUKA!`);
+      }
+
+      // Missed ball
+      if (brickState.ballY > VIRT_H + 10) {
+        brickState.lives--;
+        audio.playCrash();
+        if (brickState.lives <= 0) {
+          triggerGameOver('BOLA HABIS!', 'Skor Brick Breaker Neo Tercatat!');
+          return;
+        }
+        brickState.ballLaunched = false;
+      }
+
+      updateTopHud(currentScore, 'NYAWA', '❤️'.repeat(brickState.lives), 'STAGE', `LV ${brickState.level}`);
+    }
+
+    function renderBrickGame() {
+      ctx.fillStyle = '#0b0e1e';
+      ctx.fillRect(0, 0, VIRT_W, VIRT_H);
+
+      // Bricks
+      brickState.bricks.forEach((br) => {
+        ctx.fillStyle = br.color;
+        ctx.fillRect(Math.round(br.x), Math.round(br.y), br.w, br.h);
+        ctx.fillStyle = 'rgba(255,255,255,0.28)';
+        ctx.fillRect(Math.round(br.x), Math.round(br.y), br.w, 2);
+      });
+
+      // Paddle
+      const px = Math.round(brickState.paddleX - brickState.paddleW / 2);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(px, VIRT_H - 20, brickState.paddleW, 7);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(px + 4, VIRT_H - 19, brickState.paddleW - 8, 2);
+
+      // Energy Ball
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(Math.round(brickState.ballX - 4), Math.round(brickState.ballY - 4), 8, 8);
+
+      if (!brickState.ballLaunched) {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '9px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('TEKAN GAS / SPASI UNTUK MULAI', VIRT_W / 2, VIRT_H / 2 + 24);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // GAME D: SNAKE EDU QUEST (WITH NAGALA EDU BONUS CHESTS)
+    // -------------------------------------------------------------------------
+    const EDU_QUESTIONS = [
+      { q: 'Planet terdekat dengan Matahari adalah?', opts: ['Merkurius', 'Mars'], ans: 0 },
+      { q: 'Hasil dari 12 × 8 adalah?', opts: ['86', '96'], ans: 1 },
+      { q: 'Ibu kota negara Jepang adalah?', opts: ['Tokyo', 'Osaka'], ans: 0 },
+      { q: 'Simbol kimia untuk Air adalah?', opts: ['H2O', 'CO2'], ans: 0 },
+      { q: 'Benua terluas di dunia adalah?', opts: ['Afrika', 'Asia'], ans: 1 }
+    ];
+
+    const snakeState = {
+      cols: 30,
+      rows: 20,
+      cellSize: 12,
+      body: [],
+      dir: { x: 1, y: 0 },
+      nextDir: { x: 1, y: 0 },
+      apple: { x: 20, y: 10 },
+      chest: null,
+      moveAcc: 0,
+      applesEaten: 0,
+      quizActive: false,
+      currentQuiz: null
+    };
+
+    function spawnSnakeFood() {
+      snakeState.apple = {
+        x: 1 + Math.floor(Math.random() * (snakeState.cols - 2)),
+        y: 1 + Math.floor(Math.random() * (snakeState.rows - 2))
+      };
+      if (snakeState.applesEaten > 0 && snakeState.applesEaten % 3 === 0 && !snakeState.chest) {
+        snakeState.chest = {
+          x: 2 + Math.floor(Math.random() * (snakeState.cols - 4)),
+          y: 2 + Math.floor(Math.random() * (snakeState.rows - 4))
+        };
+      }
+    }
+
+    function openEduQuizPopup() {
+      snakeState.quizActive = true;
+      const qObj = EDU_QUESTIONS[Math.floor(Math.random() * EDU_QUESTIONS.length)];
+      snakeState.currentQuiz = qObj;
+
+      const overlay = document.getElementById('eduQuizOverlay');
+      const qText = document.getElementById('eduQuizQuestion');
+      const optsBox = document.getElementById('eduQuizOptions');
+      qText.textContent = qObj.q;
+      optsBox.innerHTML = '';
+
+      qObj.opts.forEach((optStr, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'pixel-btn py-3 px-4 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-pixel text-xs';
+        btn.textContent = `${idx === 0 ? '[KIRI]' : '[KANAN]'} ${optStr}`;
+        btn.onclick = () => answerEduQuiz(idx);
+        optsBox.appendChild(btn);
+      });
+      overlay.classList.remove('hidden');
+    }
+
+    function answerEduQuiz(chosenIdx) {
+      if (!snakeState.quizActive || !snakeState.currentQuiz) return;
+      const correct = chosenIdx === snakeState.currentQuiz.ans;
+      snakeState.quizActive = false;
+      snakeState.currentQuiz = null;
+      document.getElementById('eduQuizOverlay').classList.add('hidden');
+
+      if (correct) {
+        currentScore += 500;
+        audio.playPickup();
+        showToast('🎓 JAWABAN BENAR! +500 POIN BONUS!');
+      } else {
+        currentScore += 100;
+        audio.playTone(250, 0.15);
+        showToast('💡 Tetap semangat! +100 Poin Partisipasi!');
+      }
+    }
+
+    function initSnakeGame() {
+      snakeState.body = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+      snakeState.dir = { x: 1, y: 0 };
+      snakeState.nextDir = { x: 1, y: 0 };
+      snakeState.chest = null;
+      snakeState.moveAcc = 0;
+      snakeState.applesEaten = 0;
+      snakeState.quizActive = false;
+      document.getElementById('eduQuizOverlay').classList.add('hidden');
+      currentScore = 0;
+      spawnSnakeFood();
+    }
+
+    function updateSnakeGame(dt) {
+      audio.updateEngine(0, false, false);
+      const inp = getUnifiedInput();
+
+      // If Edu Quiz modal is open, allow answering via Left (Option 0) or Right (Option 1)
+      if (snakeState.quizActive) {
+        if (inp.left) answerEduQuiz(0);
+        else if (inp.right) answerEduQuiz(1);
+        return;
+      }
+
+      if (inp.up && snakeState.dir.y !== 1) snakeState.nextDir = { x: 0, y: -1 };
+      else if (inp.down && snakeState.dir.y !== -1) snakeState.nextDir = { x: 0, y: 1 };
+      else if (inp.left && snakeState.dir.x !== 1) snakeState.nextDir = { x: -1, y: 0 };
+      else if (inp.right && snakeState.dir.x !== -1) snakeState.nextDir = { x: 1, y: 0 };
+
+      const stepInterval = inp.actionA ? 0.075 : Math.max(0.085, 0.145 - snakeState.applesEaten * 0.003);
+      snakeState.moveAcc += dt;
+      if (snakeState.moveAcc < stepInterval) {
+        updateTopHud(currentScore, 'PANJANG', `${snakeState.body.length}`, 'APEL', `${snakeState.applesEaten}`);
+        return;
+      }
+      snakeState.moveAcc = 0;
+      snakeState.dir = { ...snakeState.nextDir };
+
+      const head = {
+        x: snakeState.body[0].x + snakeState.dir.x,
+        y: snakeState.body[0].y + snakeState.dir.y
+      };
+
+      // Wall or self collision
+      const hitWall = head.x < 0 || head.x >= snakeState.cols || head.y < 0 || head.y >= snakeState.rows;
+      const hitSelf = snakeState.body.some((seg) => seg.x === head.x && seg.y === head.y);
+      if (hitWall || hitSelf) {
+        audio.playCrash();
+        triggerGameOver('ULAR MENABRAK!', 'Permainan Snake Edu Quest Berakhir!');
+        return;
+      }
+
+      snakeState.body.unshift(head);
+
+      // Eat Apple
+      if (head.x === snakeState.apple.x && head.y === snakeState.apple.y) {
+        snakeState.applesEaten++;
+        currentScore += 120;
+        audio.playPickup();
+        spawnSnakeFood();
+      } else {
+        snakeState.body.pop();
+      }
+
+      // Eat Nagala Edu Chest
+      if (snakeState.chest && head.x === snakeState.chest.x && head.y === snakeState.chest.y) {
+        snakeState.chest = null;
+        audio.playPickup();
+        openEduQuizPopup();
+      }
+
+      updateTopHud(currentScore, 'PANJANG', `${snakeState.body.length}`, 'APEL', `${snakeState.applesEaten}`);
+    }
+
+    function renderSnakeGame() {
+      const cs = snakeState.cellSize;
+      // Subtle checkerboard grass
+      for (let r = 0; r < snakeState.rows; r++) {
+        for (let c = 0; c < snakeState.cols; c++) {
+          ctx.fillStyle = (r + c) % 2 === 0 ? '#064e3b' : '#065f46';
+          ctx.fillRect(c * cs, r * cs, cs, cs);
+        }
+      }
+
+      // Apple
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(snakeState.apple.x * cs + 2, snakeState.apple.y * cs + 2, cs - 4, cs - 4);
+      ctx.fillStyle = '#84cc16';
+      ctx.fillRect(snakeState.apple.x * cs + 5, snakeState.apple.y * cs, 3, 3);
+
+      // Edu Bonus Chest
+      if (snakeState.chest) {
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(snakeState.chest.x * cs + 1, snakeState.chest.y * cs + 1, cs - 2, cs - 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(snakeState.chest.x * cs + 1, snakeState.chest.y * cs + 1, cs - 2, cs - 2);
+      }
+
+      // Snake Body
+      snakeState.body.forEach((seg, idx) => {
+        ctx.fillStyle = idx === 0 ? '#38bdf8' : '#34d399';
+        ctx.fillRect(seg.x * cs + 1, seg.y * cs + 1, cs - 2, cs - 2);
+      });
+    }
+
+    // =========================================================================
+    // 7. CONSOLE NAVIGATION (LAUNCHER <-> ACTIVE GAME) & TELEMETRY SYNC
+    // =========================================================================
+    const GAME_TITLES = {
+      racing: '🏎️ PIXEL TURBO',
+      shooter: '🛸 GALAXY DEFENDER',
+      brick: '🧱 BRICK BREAKER',
+      snake: '🐍 SNAKE EDU'
+    };
+
+    function launchGame(gameId) {
+      audio.init();
+      activeScreen = 'GAME';
+      activeGameId = gameId;
+      isGameOver = false;
+
+      document.getElementById('launcherView').classList.add('hidden');
+      document.getElementById('gameStageView').classList.remove('hidden');
+      document.getElementById('gameOverOverlay').classList.add('hidden');
+      document.getElementById('eduQuizOverlay').classList.add('hidden');
+      document.getElementById('activeGameBadge').textContent = GAME_TITLES[gameId] || 'ARCADE GAME';
+
+      if (gameId === 'racing') initRacingGame();
+      else if (gameId === 'shooter') initShooterGame();
+      else if (gameId === 'brick') initBrickGame();
+      else if (gameId === 'snake') initSnakeGame();
+
+      syncHostTelemetryToPhone(true);
+    }
+
+    function returnToLauncher() {
+      activeScreen = 'LAUNCHER';
+      isGameOver = false;
+      audio.updateEngine(0, false, false);
+      document.getElementById('gameStageView').classList.add('hidden');
+      document.getElementById('gameOverOverlay').classList.add('hidden');
+      document.getElementById('eduQuizOverlay').classList.add('hidden');
+      document.getElementById('launcherView').classList.remove('hidden');
+      syncHostTelemetryToPhone(true);
+    }
+
     let lastTelemetryPush = 0;
     function syncHostTelemetryToPhone(force = false) {
       const now = Date.now();
-      if (!force && now - lastTelemetryPush < 250) return;
+      if (!force && now - lastTelemetryPush < 260) return;
       lastTelemetryPush = now;
 
-      const telemetry = {
-        speed: Math.round(gameState.speed),
-        score: Math.floor(gameState.score),
-        status: gameState.status
+      const payload = {
+        activeScreen,
+        activeGameId,
+        score: Math.floor(currentScore)
       };
 
       const hasOpenP2P = Boolean(activePeerConn && activePeerConn.open);
       if (hasOpenP2P) {
-        try {
-          activePeerConn.send({ type: 'HOST_TELEMETRY', payload: telemetry });
-        } catch (_) {}
+        try { activePeerConn.send({ type: 'HOST_TELEMETRY', payload }); } catch (_) {}
       }
-
       if (localChannel) {
-        try {
-          localChannel.postMessage({ type: 'HOST_TELEMETRY', payload: telemetry });
-        } catch (_) {}
+        try { localChannel.postMessage({ type: 'HOST_TELEMETRY', payload }); } catch (_) {}
       }
-
       if (!hasOpenP2P && firebaseReady && currentUser && remoteInput.connected) {
-        const roomRef = getRoomDocRef(roomCode);
-        updateDoc(roomRef, telemetry).catch(() => {});
+        updateDoc(getRoomDocRef(roomCode), payload).catch(() => {});
       }
     }
 
     // =========================================================================
-    // 9. EVENT LISTENERS (KEYBOARD, BUTTONS, SIMULATOR, LOBBY)
+    // 8. EVENT LISTENERS (CARTRIDGES, KEYBOARD, SIMULATOR, PHONE REMOTE)
     // =========================================================================
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') localInput.left = true;
-      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') localInput.right = true;
-      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') localInput.gas = true;
-      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') localInput.brake = true;
-      if (e.code === 'Space') {
-        localInput.boost = true;
-        if (gameState.status === 'LOBBY') startNewRace();
-      }
-      if (e.key === 'h' || e.key === 'H') audio.playHorn();
+    document.querySelectorAll('[data-launch-game]').forEach((card) => {
+      card.addEventListener('click', () => {
+        const gid = card.dataset.launchGame;
+        launchGame(gid);
+      });
     });
 
-    window.addEventListener('keyup', (e) => {
-      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') localInput.left = false;
-      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') localInput.right = false;
-      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') localInput.gas = false;
-      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') localInput.brake = false;
-      if (e.code === 'Space') localInput.boost = false;
-    });
+    document.getElementById('backToLauncherBtn').addEventListener('click', returnToLauncher);
+    document.getElementById('gameOverHomeBtn').addEventListener('click', returnToLauncher);
+    document.getElementById('restartGameBtn').addEventListener('click', () => launchGame(activeGameId));
 
-    // Host UI Buttons
-    document.getElementById('startRaceBtn').addEventListener('click', startNewRace);
-    document.getElementById('restartRaceBtn').addEventListener('click', startNewRace);
-
-    document.getElementById('openLobbyBtn').addEventListener('click', () => {
-      gameState.status = 'LOBBY';
-      document.getElementById('gameOverOverlay').classList.add('hidden');
-      document.getElementById('lobbyOverlay').classList.remove('hidden');
-    });
-
-    document.getElementById('toggleQrModalBtn').addEventListener('click', () => {
-      const lobby = document.getElementById('lobbyOverlay');
-      lobby.classList.toggle('hidden');
-    });
-
-    // Manual / Guide Modal Controls
+    // Manual / QR Modal
     const manualModal = document.getElementById('manualModal');
-    document.getElementById('openManualBtn').addEventListener('click', () => manualModal.classList.remove('hidden'));
-    document.getElementById('lobbyManualBtn').addEventListener('click', () => manualModal.classList.remove('hidden'));
+    document.getElementById('launcherOpenManualBtn').addEventListener('click', () => manualModal.classList.remove('hidden'));
+    document.getElementById('stageQrBtn').addEventListener('click', () => manualModal.classList.remove('hidden'));
     document.getElementById('closeManualBtn').addEventListener('click', () => manualModal.classList.add('hidden'));
     document.getElementById('manualGotItBtn').addEventListener('click', () => manualModal.classList.add('hidden'));
 
     document.getElementById('applyCustomUrlBtn').addEventListener('click', () => {
-      const rawUrl = document.getElementById('customHostUrlInput').value.trim();
-      if (!rawUrl || (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://'))) {
-        showToast('Masukkan URL valid yang diawali http:// atau https://');
+      const val = document.getElementById('customHostUrlInput').value.trim();
+      if (!val || (!val.startsWith('http://') && !val.startsWith('https://'))) {
+        showToast('Masukkan link URL valid diawali http:// atau https://');
         return;
       }
-      customHostedBaseUrl = rawUrl.split('?')[0];
-      renderQrCodeForRoom(roomCode);
+      customHostedBaseUrl = val.split('?')[0];
+      renderAllQrCodes(roomCode);
       manualModal.classList.add('hidden');
-      showToast('✅ QR Code diperbarui dengan link web kamu!');
+      showToast('✅ QR Code diperbarui dengan URL kamu!');
     });
 
+    // Copy PIN / Share Link
+    document.getElementById('launcherCopyPinBtn').addEventListener('click', () => {
+      const base = window.location.href.split('?')[0];
+      const text = (base.startsWith('http://') || base.startsWith('https://'))
+        ? `${base}?room=${roomCode}`
+        : `PIN Room Nagala Edu Arcade: ${roomCode}`;
+      const inp = document.createElement('input');
+      inp.value = text;
+      document.body.appendChild(inp);
+      inp.select();
+      try {
+        document.execCommand('copy');
+        showToast('📋 Link / PIN Room disalin!');
+      } catch (_) {
+        showToast(`PIN Room: ${roomCode}`);
+      }
+      document.body.removeChild(inp);
+    });
+
+    // Mute Audio
     document.getElementById('muteAudioBtn').addEventListener('click', (e) => {
       audio.init();
       audio.muted = !audio.muted;
       e.currentTarget.textContent = audio.muted ? '🔇' : '🔊';
     });
 
-    // Car Color Swatches
-    document.querySelectorAll('.color-swatch').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.color-swatch').forEach((b) => b.classList.remove('ring-2', 'ring-amber-400'));
-        btn.classList.add('ring-2', 'ring-amber-400');
-        gameState.carColor = btn.dataset.color;
-      });
-    });
-
-    // Copy Room Link (using execCommand fallback for iframe compatibility)
-    document.getElementById('copyRoomLinkBtn').addEventListener('click', () => {
-      const baseUrl = window.location.href.split('?')[0];
-      const shareText = (baseUrl.startsWith('http://') || baseUrl.startsWith('https://'))
-        ? `${baseUrl}?room=${roomCode}`
-        : `PIN Room Pixel Turbo: ${roomCode}`;
-
-      const tempInput = document.createElement('input');
-      tempInput.value = shareText;
-      document.body.appendChild(tempInput);
-      tempInput.select();
-      try {
-        document.execCommand('copy');
-        showToast('📋 Link / PIN Room berhasil disalin!');
-      } catch (_) {
-        showToast(`PIN Room: ${roomCode}`);
-      }
-      document.body.removeChild(tempInput);
-    });
-
-    // Switch between Host View & Controller View
-    document.getElementById('switchToPhoneModeBtn').addEventListener('click', () => {
-      switchToControllerView('');
-    });
-
-    document.getElementById('backToHostBtn').addEventListener('click', () => {
-      switchToHostView();
-    });
-
+    // Mode Switching (Launcher <-> Mobile Phone Controller)
+    document.getElementById('launcherToPhoneBtn').addEventListener('click', () => switchToControllerView(''));
+    document.getElementById('backToHostBtn').addEventListener('click', switchToHostLauncherView);
     document.getElementById('ctrlDisconnectBtn').addEventListener('click', () => {
       document.getElementById('pinJoinOverlay').classList.remove('hidden');
     });
@@ -2170,87 +2460,90 @@
         return;
       }
       stopInAppQrScanner();
-      const statusMsg = document.getElementById('pinJoinStatusMsg');
-      if (statusMsg) {
-        statusMsg.textContent = `Menghubungkan jalur cepat P2P ke PIN ${val}...`;
-        statusMsg.classList.remove('hidden');
-      }
       document.getElementById('pinJoinOverlay').classList.add('hidden');
       connectControllerToRoom(val);
     });
 
-    // In-App QR Scanner Buttons
     document.getElementById('startQrScanBtn').addEventListener('click', startInAppQrScanner);
     document.getElementById('stopQrScanBtn').addEventListener('click', stopInAppQrScanner);
 
-    // Controller Special Actions (Horn & Remote Start)
-    document.getElementById('ctrlHornBtn').addEventListener('click', () => {
-      ctrlState.hornPulse = Date.now();
-      if (navigator.vibrate) {
-        try { navigator.vibrate([40, 40, 60]); } catch (_) {}
-      }
+    // Controller Special Button & Remote Game Switcher
+    document.getElementById('ctrlBtnSpecial').addEventListener('click', () => {
+      ctrlState.specialPulse = Date.now();
+      if (navigator.vibrate) { try { navigator.vibrate(45); } catch (_) {} }
       pushControllerState(true);
     });
 
-    document.getElementById('ctrlStartGameBtn').addEventListener('click', () => {
-      ctrlState.startPulse = Date.now();
-      if (navigator.vibrate) {
-        try { navigator.vibrate(50); } catch (_) {}
-      }
-      pushControllerState(true);
+    document.querySelectorAll('[data-remote-game]').forEach((pill) => {
+      pill.addEventListener('click', () => {
+        const target = pill.dataset.remoteGame;
+        ctrlState.launchGameReq = target;
+        ctrlState.launchPulse = Date.now();
+        if (navigator.vibrate) { try { navigator.vibrate(35); } catch (_) {} }
+        if (target === 'LAUNCHER') adaptControllerLayoutForGame('LAUNCHER', 'racing');
+        else adaptControllerLayoutForGame('GAME', target);
+        pushControllerState(true);
+      });
     });
 
-    document.getElementById('toggleTiltBtn').addEventListener('click', toggleTiltSteering);
+    // Keyboard Support
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') localInput.left = true;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') localInput.right = true;
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') localInput.up = true;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') localInput.down = true;
+      if (e.code === 'Space' || e.key === 'z' || e.key === 'Z') localInput.actionA = true;
+      if (e.key === 'Shift' || e.key === 'x' || e.key === 'X') localInput.actionB = true;
+      if (e.key === 'h' || e.key === 'H') audio.playHorn();
+    });
 
-    // Split-Screen Simulator Drawer (For instant 1-screen testing)
-    const simDrawer = document.getElementById('simPhoneDrawer');
-    document.getElementById('toggleSimControllerBtn').addEventListener('click', () => {
-      simDrawer.classList.toggle('hidden');
-      remoteInput.connected = true;
-      remoteInput.lastSeen = Date.now();
-      updatePhoneConnectedBadges(true);
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') localInput.left = false;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') localInput.right = false;
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') localInput.up = false;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') localInput.down = false;
+      if (e.code === 'Space' || e.key === 'z' || e.key === 'Z') localInput.actionA = false;
+      if (e.key === 'Shift' || e.key === 'x' || e.key === 'X') localInput.actionB = false;
     });
-    document.getElementById('lobbySimBtn').addEventListener('click', () => {
-      simDrawer.classList.remove('hidden');
-      remoteInput.connected = true;
-      remoteInput.lastSeen = Date.now();
-      updatePhoneConnectedBadges(true);
-      startNewRace();
-    });
-    document.getElementById('closeSimDrawerBtn').addEventListener('click', () => {
-      simDrawer.classList.add('hidden');
-    });
+
+    // On-Screen Simulator Drawer
+    const simDrawer = document.getElementById('simPadDrawer');
+    document.getElementById('toggleSimPadBtn').addEventListener('click', () => simDrawer.classList.toggle('hidden'));
+    document.getElementById('closeSimPadBtn').addEventListener('click', () => simDrawer.classList.add('hidden'));
 
     document.querySelectorAll('.sim-pad-btn').forEach((btn) => {
-      const key = btn.dataset.simBtn;
-      const press = (e) => {
-        e.preventDefault();
-        localInput[key] = true;
-        btn.classList.add('pressed');
-      };
-      const release = (e) => {
-        e.preventDefault();
-        localInput[key] = false;
-        btn.classList.remove('pressed');
-      };
+      const k = btn.dataset.simBtn;
+      const press = (e) => { e.preventDefault(); localInput[k] = true; btn.classList.add('pressed'); };
+      const rel = (e) => { e.preventDefault(); localInput[k] = false; btn.classList.remove('pressed'); };
       btn.addEventListener('mousedown', press);
-      btn.addEventListener('mouseup', release);
-      btn.addEventListener('mouseleave', release);
+      btn.addEventListener('mouseup', rel);
+      btn.addEventListener('mouseleave', rel);
       btn.addEventListener('touchstart', press, { passive: false });
-      btn.addEventListener('touchend', release, { passive: false });
+      btn.addEventListener('touchend', rel, { passive: false });
     });
 
     // =========================================================================
-    // 10. MAIN ANIMATION LOOP & BOOTSTRAP
+    // 9. MAIN GAME LOOP & INITIALIZATION
     // =========================================================================
-    let lastFrameTime = performance.now();
+    let lastTime = performance.now();
     function mainLoop(now) {
-      const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
-      lastFrameTime = now;
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
 
-      if (!isControllerMode) {
-        updateGame(dt);
-        renderGame();
+      if (!isControllerMode && activeScreen === 'GAME' && !isGameOver) {
+        if (activeGameId === 'racing') {
+          updateRacingGame(dt);
+          renderRacingGame();
+        } else if (activeGameId === 'shooter') {
+          updateShooterGame(dt);
+          renderShooterGame();
+        } else if (activeGameId === 'brick') {
+          updateBrickGame(dt);
+          renderBrickGame();
+        } else if (activeGameId === 'snake') {
+          updateSnakeGame(dt);
+          renderSnakeGame();
+        }
         syncHostTelemetryToPhone(false);
       }
 
@@ -2263,7 +2556,7 @@
       if (isControllerMode) {
         switchToControllerView(initialRoomFromUrl);
       } else {
-        document.getElementById('hostView').classList.remove('hidden');
+        document.getElementById('launcherView').classList.remove('hidden');
       }
 
       await initRealtimeBackend();
