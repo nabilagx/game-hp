@@ -624,6 +624,182 @@
     };
 
     // =========================================================================
+    // 2. UTILITY HELPERS (ROOM PIN, TOAST BANNER, QR CODE GENERATOR)
+    // =========================================================================
+    let customHostedBaseUrl = '';
+    let toastTimeoutId = null;
+
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let result = '';
+      for (let i = 0; i < 4; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    function showToast(message, durationMs = 2600) {
+      const banner = document.getElementById('toastBanner');
+      const textEl = document.getElementById('toastText');
+      if (!banner || !textEl) return;
+
+      textEl.textContent = message;
+      banner.classList.remove('hidden');
+      clearTimeout(toastTimeoutId);
+      toastTimeoutId = setTimeout(() => {
+        banner.classList.add('hidden');
+      }, durationMs);
+    }
+
+    function renderQrCodeForRoom(code) {
+      const box = document.getElementById('qrCodeBox');
+      const hintEl = document.getElementById('previewUrlHint');
+      if (!box) return;
+
+      box.innerHTML = '';
+      const rawBase = customHostedBaseUrl || window.location.href.split('?')[0];
+      const isHttpUrl = rawBase.startsWith('http://') || rawBase.startsWith('https://');
+      const qrPayload = isHttpUrl
+        ? `${rawBase}?room=${code}`
+        : `PIXEL-TURBO-ROOM:${code}`;
+
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(box, {
+          text: qrPayload,
+          width: 148,
+          height: 148,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        box.innerHTML = `<span class="text-slate-900 font-pixel text-xs p-4">PIN: ${code}</span>`;
+      }
+
+      if (hintEl) {
+        if (isHttpUrl) {
+          hintEl.innerHTML = `
+            <span class="text-emerald-400 font-bold">✓ Siap Scan Kamera HP!</span><br/>
+            Scan QR di atas dengan kamera HP, atau buka link ini di HP dan masukkan PIN <b class="text-amber-300">${code}</b>.
+          `;
+        } else {
+          hintEl.innerHTML = `
+            1. Buka halaman web game ini di HP.<br/>
+            2. Klik <b>"Saya Kontroler HP"</b>.<br/>
+            3. Tekan <b>Scan QR</b> atau ketik PIN <b class="text-amber-300">${code}</b>.
+          `;
+        }
+      }
+    }
+
+    // =========================================================================
+    // 3. RETRO 16-BIT WEB AUDIO SYNTHESIZER (ENGINE, HORN, PICKUP, CRASH)
+    // =========================================================================
+    class RetroAudio {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.engineOsc = null;
+        this.engineGain = null;
+      }
+
+      init() {
+        if (this.ctx) {
+          if (this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+          return;
+        }
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+
+        try {
+          this.ctx = new AudioCtx();
+          this.engineOsc = this.ctx.createOscillator();
+          this.engineGain = this.ctx.createGain();
+          this.engineOsc.type = 'sawtooth';
+          this.engineOsc.frequency.value = 55;
+          this.engineGain.gain.value = 0;
+
+          this.engineOsc.connect(this.engineGain);
+          this.engineGain.connect(this.ctx.destination);
+          this.engineOsc.start();
+        } catch (_) {
+          this.ctx = null;
+        }
+      }
+
+      updateEngine(speedRatio, isRunning, isBoosting) {
+        if (!this.ctx || !this.engineOsc || !this.engineGain) return;
+        const now = this.ctx.currentTime;
+        if (this.muted || !isRunning || speedRatio <= 0.02) {
+          this.engineGain.gain.setTargetAtTime(0, now, 0.06);
+          return;
+        }
+        const targetFreq = 52 + speedRatio * 135 + (isBoosting ? 48 : 0);
+        this.engineOsc.frequency.setTargetAtTime(targetFreq, now, 0.05);
+        this.engineGain.gain.setTargetAtTime(isBoosting ? 0.055 : 0.038, now, 0.05);
+      }
+
+      playHorn() {
+        this.init();
+        if (!this.ctx || this.muted) return;
+        const now = this.ctx.currentTime;
+        [0, 0.14].forEach((offset) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(440, now + offset);
+          osc.frequency.setValueAtTime(554.37, now + offset + 0.04);
+          gain.gain.setValueAtTime(0.08, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.11);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.12);
+        });
+      }
+
+      playPickup() {
+        this.init();
+        if (!this.ctx || this.muted) return;
+        const now = this.ctx.currentTime;
+        const notes = [587.33, 880, 1174.66];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.055);
+          gain.gain.setValueAtTime(0.09, now + idx * 0.055);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.055);
+          osc.stop(now + idx * 0.055 + 0.13);
+        });
+      }
+
+      playCrash() {
+        this.init();
+        if (!this.ctx || this.muted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(32, now + 0.28);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.31);
+      }
+    }
+
+    const audio = new RetroAudio();
+
+    // =========================================================================
     // 4. WEBRTC P2P (PRIMARY FAST SYNC) + FIREBASE & BROADCAST FALLBACK
     // =========================================================================
     function getPeerIdForRoom(code) {
@@ -689,7 +865,6 @@
         });
 
         peerInstance.on('error', (err) => {
-          // If room ID collided on public signaling server, generate a fresh PIN automatically
           if (err && err.type === 'unavailable-id' && !isControllerMode) {
             roomCode = generateRoomCode();
             initHostRoom(roomCode);
@@ -748,7 +923,6 @@
 
             pushControllerState(true);
 
-            // Measure live round-trip latency every 1.5s
             clearInterval(pingIntervalId);
             pingIntervalId = setInterval(() => {
               if (activePeerConn && activePeerConn.open) {
@@ -833,42 +1007,6 @@
         }
       } catch (err) {
         firebaseReady = false;
-      }
-    }
-    const audio = new RetroAudio();
-
-    // =========================================================================
-    // 4. FIREBASE FIRESTORE + BROADCAST CHANNEL MULTI-DEVICE SYNC
-    // =========================================================================
-    async function initRealtimeBackend() {
-      // Setup BroadcastChannel for instant zero-latency local tab sync
-      setupBroadcastChannel(roomCode);
-
-      try {
-        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-          const firebaseConfig = JSON.parse(__firebase_config);
-          const app = initializeApp(firebaseConfig);
-          auth = getAuth(app);
-          db = getFirestore(app);
-
-          // RULE 3: Auth before any Firestore query
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-          currentUser = auth.currentUser;
-          firebaseReady = Boolean(db && currentUser);
-        }
-      } catch (err) {
-        console.warn('Cloud sync fallback to local channel:', err);
-        firebaseReady = false;
-      }
-
-      if (isControllerMode) {
-        connectControllerToRoom(roomCode);
-      } else {
-        initHostRoom(roomCode);
       }
     }
 
