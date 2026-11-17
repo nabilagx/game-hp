@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pixel Turbo - Game Balapan Kontrol HP via QR</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Retro Pixel Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+
+  <!-- QR Code Generator Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- In-App QR Code Scanner Library (for Mobile Controller View) -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+  <style>
+    /* Custom Pixel-Art & Arcade Styling */
+    :root {
+      --font-pixel: 'Press Start 2P', monospace;
+      --font-vt: 'VT323', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: #0b0d17;
+      color: #f8fafc;
+      font-family: var(--font-vt);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .font-pixel {
+      font-family: var(--font-pixel);
+    }
+
+    .font-vt {
+      font-family: var(--font-vt);
+    }
+
+    /* Crisp Pixel Rendering for Game Canvas */
+    canvas#gameCanvas {
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Retro CRT Scanline Subtle Overlay */
+    .crt-scanlines {
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.22) 50%
+      );
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+
+    /* Arcade Bevel Buttons */
+    .pixel-btn {
+      position: relative;
+      border: 3px solid #000;
+      box-shadow:
+        inset -3px -3px 0px rgba(0, 0, 0, 0.45),
+        inset 3px 3px 0px rgba(255, 255, 255, 0.35),
+        0 4px 0 #000;
+      transition: transform 0.06s ease, box-shadow 0.06s ease;
+      cursor: pointer;
+    }
+
+    .pixel-btn:active, .pixel-btn.pressed {
+      transform: translateY(3px);
+      box-shadow:
+        inset 2px 2px 0px rgba(0, 0, 0, 0.55),
+        0 1px 0 #000;
+    }
+
+    /* Pixel Panel Frame */
+    .pixel-card {
+      background: #141829;
+      border: 4px solid #38bdf8;
+      box-shadow:
+        0 0 0 4px #090b12,
+        0 12px 30px rgba(0, 0, 0, 0.75);
+    }
+
+    /* QR Container */
+    #qrCodeBox img, #qrCodeBox canvas {
+      margin: 0 auto;
+      image-rendering: pixelated;
+      border: 6px solid #ffffff;
+      border-radius: 4px;
+    }
+
+    /* Controller Touch Zone Lock */
+    .controller-surface {
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7)); }
+      50% { filter: drop-shadow(0 0 16px rgba(244, 63, 94, 0.9)); }
+    }
+
+    .title-glow {
+      animation: pulseGlow 2.4s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="relative flex flex-col justify-between bg-slate-950 text-slate-100">
+
+  <!-- ===================================================================== -->
+  <!-- TOAST NOTIFICATION BANNER (Replaces alert/confirm)                    -->
+  <!-- ===================================================================== -->
+  <div id="toastBanner" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2.5 rounded-lg border-2 border-amber-400 bg-slate-900/95 text-amber-300 font-pixel text-[10px] sm:text-xs shadow-2xl text-center max-w-[92vw]">
+    <span id="toastText">Pesan Sistem</span>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 1: HOST / MAIN ARCADE SCREEN (PC / LAPTOP / TV)                  -->
+  <!-- ===================================================================== -->
+  <div id="hostView" class="relative w-full h-full flex flex-col overflow-hidden">
+
+    <!-- Top Arcade HUD Bar -->
+    <header class="relative z-20 flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5 sm:py-2.5 bg-slate-950/90 border-b-4 border-slate-800">
+      <!-- Brand & Room PIN -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="px-2.5 py-1 bg-rose-600 border-2 border-white rounded text-white font-pixel text-[10px] sm:text-xs tracking-wider">
+          PIXEL TURBO
+        </div>
+        <button id="toggleQrModalBtn" class="pixel-btn flex items-center gap-2 px-2.5 py-1 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-pixel text-[9px] sm:text-[11px]" title="Tampilkan QR Code Koneksi HP">
+          <span>📱 PIN: <strong id="hudRoomCode">----</strong></span>
+          <span class="hidden sm:inline underline">[QR]</span>
+        </button>
+        <button id="openManualBtn" class="pixel-btn px-2.5 py-1 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-pixel text-[9px] sm:text-[10px]" title="Buka Panduan Cara Konek HP">
+          📖 PANDUAN
+        </button>
+      </div>
+
+      <!-- Live Telemetry Metrics -->
+      <div class="flex items-center gap-3 sm:gap-6 text-lg sm:text-2xl tracking-wider">
+        <div class="flex flex-col items-center leading-none">
+          <span class="text-[11px] sm:text-xs text-slate-400 uppercase">SKOR</span>
+          <span id="hudScore" class="font-pixel text-xs sm:text-sm text-amber-400">00000</span>
+        </div>
+        <div class="flex flex-col items-center leading-none">
+          <span class="text-[11px] sm:text-xs text-slate-400 uppercase">SPEED</span>
+          <span class="font-pixel text-xs sm:text-sm text-emerald-400"><span id="hudSpeed">0</span> <span class="text-[9px]">KM/H</span></span>
+        </div>
+        <div class="hidden md:flex flex-col items-start leading-none w-28">
+          <span class="text-[11px] text-slate-400 uppercase mb-1">NITRO</span>
+          <div class="w-full h-3 bg-slate-800 border border-slate-600 rounded overflow-hidden">
+            <div id="hudNitroBar" class="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-100" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connection Status & Audio / Demo Controls -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <div id="phoneStatusPill" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-600 text-xs sm:text-sm">
+          <span id="phoneStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="phoneStatusLabel" class="text-slate-300 font-bold">Menunggu HP</span>
+        </div>
+
+        <button id="toggleSimControllerBtn" class="pixel-btn px-2 py-1 rounded bg-violet-600 hover:bg-violet-500 text-white font-pixel text-[9px] hidden sm:inline-flex items-center gap-1" title="Uji coba kontroler HP langsung di layar ini">
+          🎮 Simulasi HP
+        </button>
+
+        <button id="muteAudioBtn" class="pixel-btn px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-sm sm:text-base" title="Suara Efek Mesin">
+          🔊
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Game Canvas Stage -->
+    <main class="relative flex-1 w-full h-full bg-sky-900 overflow-hidden">
+      <canvas id="gameCanvas"></canvas>
+      <div class="crt-scanlines absolute inset-0"></div>
+
+      <!-- ================================================================= -->
+      <!-- OVERLAY: START LOBBY & QR PAIRING MODAL                           -->
+      <!-- ================================================================= -->
+      <div id="lobbyOverlay" class="absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs overflow-y-auto">
+        <div class="pixel-card w-full max-w-3xl rounded-xl p-4 sm:p-6 text-center my-auto">
+          <h1 class="title-glow font-pixel text-lg sm:text-2xl md:text-3xl text-amber-400 mb-2 leading-snug">
+            PIXEL TURBO RACER
+          </h1>
+          <p class="text-lg sm:text-xl text-sky-300 mb-4">
+            Scan QR Code pakai HP untuk jadikan HP sebagai <span class="text-amber-300 font-bold">Setir & Pedal Nirkabel!</span>
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-center bg-slate-900/90 p-4 rounded-lg border-2 border-slate-700">
+            <!-- Left: QR Code & PIN -->
+            <div class="flex flex-col items-center justify-center">
+              <div id="qrCodeBox" class="p-2 bg-white rounded-lg shadow-lg mb-2.5 min-h-[156px] min-w-[156px] flex items-center justify-center">
+                <span class="text-slate-800 text-sm font-bold">Membuat QR...</span>
+              </div>
+
+              <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded border border-sky-500/60">
+                <span class="text-slate-400 text-base">PIN ROOM:</span>
+                <span id="lobbyRoomCode" class="font-pixel text-base sm:text-lg text-amber-400 tracking-widest">----</span>
+                <button id="copyRoomLinkBtn" class="ml-1 px-2 py-0.5 bg-sky-600 hover:bg-sky-500 text-white rounded text-xs font-bold">
+                  Salin
+                </button>
+              </div>
+
+              <div id="previewUrlHint" class="text-xs sm:text-sm text-slate-300 mt-2.5 max-w-xs leading-snug bg-slate-950/90 p-2.5 rounded border border-slate-700 text-left">
+                1. Buka link game ini di HP.<br/>
+                2. Klik <b>"Saya Kontroler HP"</b>.<br/>
+                3. Tekan <b>Scan QR</b> atau ketik <b>PIN ROOM</b> di atas.
+              </div>
+
+              <button id="lobbyManualBtn" class="mt-2 text-xs sm:text-sm text-amber-400 hover:text-amber-300 underline font-bold">
+                📖 Baca Panduan Lengkap Cara Konek HP
+              </button>
+            </div>
+
+            <!-- Right: Connection Status & Quick Start -->
+            <div class="flex flex-col justify-between h-full text-left space-y-3">
+              <div class="p-3 rounded-lg bg-slate-950 border-2 border-slate-800">
+                <div class="text-xs text-slate-400 uppercase mb-1">Status Koneksi HP:</div>
+                <div id="lobbyPhoneStatus" class="flex items-center gap-2 text-lg sm:text-xl font-bold text-amber-300">
+                  <span class="inline-block w-3 h-3 rounded-full bg-amber-400 animate-ping"></span>
+                  <span>Belum ada HP terhubung...</span>
+                </div>
+                <p class="text-sm text-slate-400 mt-1">
+                  Kamu juga bisa langsung main pakai <b>Keyboard (Panah / WASD + Spasi)</b> atau klik tombol <b>Simulasi HP</b>!
+                </p>
+              </div>
+
+              <!-- Car Color Picker -->
+              <div class="p-3 rounded-lg bg-slate-950 border-2 border-slate-800">
+                <div class="text-xs text-slate-400 uppercase mb-2">Pilih Warna Mobil:</div>
+                <div class="flex items-center gap-2.5" id="hostColorPicker">
+                  <button data-color="#ef4444" class="color-swatch w-8 h-8 rounded border-2 border-white bg-red-500 ring-2 ring-amber-400" title="Merah Turbo"></button>
+                  <button data-color="#3b82f6" class="color-swatch w-8 h-8 rounded border-2 border-white bg-blue-500" title="Biru Skyline"></button>
+                  <button data-color="#eab308" class="color-swatch w-8 h-8 rounded border-2 border-white bg-yellow-500" title="Kuning Kuningan"></button>
+                  <button data-color="#10b981" class="color-swatch w-8 h-8 rounded border-2 border-white bg-emerald-500" title="Hijau Neon"></button>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex flex-col gap-2 pt-1">
+                <button id="startRaceBtn" class="pixel-btn w-full py-3 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-pixel text-xs sm:text-sm tracking-wide">
+                  ▶ MULAI BALAPAN!
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                  <button id="switchToPhoneModeBtn" class="pixel-btn py-2 px-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-pixel text-[9px] sm:text-[10px]">
+                    📱 Saya Kontroler HP
+                  </button>
+                  <button id="lobbySimBtn" class="pixel-btn py-2 px-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-pixel text-[9px] sm:text-[10px]">
+                    🎮 Test Stik di Layar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- OVERLAY: STEP-BY-STEP CONNECTION MANUAL / GUIDE                   -->
+      <!-- ================================================================= -->
+      <div id="manualModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-xs overflow-y-auto">
+        <div class="pixel-card w-full max-w-2xl rounded-xl p-5 sm:p-6 text-left my-auto">
+          <div class="flex items-center justify-between border-b-2 border-slate-700 pb-3 mb-4">
+            <h2 class="font-pixel text-sm sm:text-lg text-amber-400">📖 PANDUAN KONEK HP</h2>
+            <button id="closeManualBtn" class="pixel-btn px-3 py-1 rounded bg-rose-600 text-white font-pixel text-[10px]">TUTUP [X]</button>
+          </div>
+
+          <div class="space-y-3.5 text-base sm:text-lg text-slate-200 max-h-[65vh] overflow-y-auto pr-1">
+            <div class="p-3 rounded-lg bg-slate-900 border border-sky-500/40">
+              <div class="font-pixel text-xs text-sky-400 mb-1">LANGKAH 1: BUKA HALAMAN GAME DI HP</div>
+              <p class="leading-snug text-slate-300">
+                Pastikan layar utama (PC/Laptop) dan HP membuka <b>link web yang sama</b>.
+                <span class="block mt-1 text-amber-300 text-sm">
+                  *Catatan Penting: Jika kamu menjalankan game ini di dalam jendela preview editor (bukan link <code>https://...</code> publik), kamera HP belum bisa membuka halaman preview lokal secara langsung sebelum file HTML ini di-upload/di-host ke web (misal Netlify, Vercel, atau GitHub Pages).
+                </span>
+              </p>
+            </div>
+
+            <div class="p-3 rounded-lg bg-slate-900 border border-emerald-500/40">
+              <div class="font-pixel text-xs text-emerald-400 mb-1">LANGKAH 2: SCAN QR ATAU MASUKKAN KODE PIN</div>
+              <ul class="list-disc pl-5 space-y-1 text-slate-300 leading-snug">
+                <li><b>Cara A (Scan Kamera HP):</b> Jika game sudah online (URL <code>https://...</code>), arahkan kamera HP ke QR Code di layar PC, lalu buka linknya. HP otomatis masuk ke mode stik!</li>
+                <li><b>Cara B (Scan QR di Dalam Game / Input PIN):</b> Buka halaman game di HP → klik tombol <span class="text-sky-300 font-bold">"📱 Saya Kontroler HP"</span> → klik <span class="text-amber-300 font-bold">"📷 Scan QR di Layar PC"</span> atau ketik <b>4 huruf/angka PIN ROOM</b>.</li>
+              </ul>
+            </div>
+
+            <div class="p-3 rounded-lg bg-slate-900 border border-violet-500/40">
+              <div class="font-pixel text-xs text-violet-400 mb-1">LANGKAH 3: ATUR LINK HOSTING (OPSIONAL)</div>
+              <p class="text-sm text-slate-300 mb-2">
+                Jika kamu sudah meng-upload file HTML ini ke alamat web sendiri, tempel URL-nya di bawah agar QR Code langsung mengarah ke alamat tersebut:
+              </p>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input id="customHostUrlInput" type="url" placeholder="https://contoh-game-kamu.netlify.app"
+                  class="flex-1 px-3 py-1.5 rounded bg-slate-950 border border-slate-600 text-sm text-white focus:outline-none focus:border-sky-400" />
+                <button id="applyCustomUrlBtn" class="pixel-btn px-3 py-1.5 rounded bg-sky-500 text-slate-950 font-pixel text-[10px]">
+                  UPDATE QR
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 flex justify-end">
+            <button id="manualGotItBtn" class="pixel-btn px-5 py-2.5 rounded-lg bg-emerald-500 text-slate-950 font-pixel text-xs">
+              SIAP, MENGERTI!
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- OVERLAY: GAME OVER / FINISH SUMMARY                               -->
+      <!-- ================================================================= -->
+      <div id="gameOverOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/85">
+        <div class="pixel-card w-full max-w-md rounded-xl p-6 text-center">
+          <h2 class="font-pixel text-xl sm:text-2xl text-rose-500 mb-2">WAKTU HABIS!</h2>
+          <p class="text-lg text-slate-300 mb-4">Balapan selesai! Cek perolehan skormu:</p>
+
+          <div class="bg-slate-900 border-2 border-slate-700 rounded-lg p-4 mb-5 space-y-2 text-xl">
+            <div class="flex justify-between">
+              <span class="text-slate-400">SKOR AKHIR:</span>
+              <span id="finalScoreText" class="font-pixel text-amber-400">0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">JARAK TEMPUH:</span>
+              <span id="finalDistText" class="font-pixel text-sky-400">0 M</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">REKOR TERBAIK:</span>
+              <span id="bestScoreText" class="font-pixel text-emerald-400">0</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button id="restartRaceBtn" class="pixel-btn flex-1 py-3 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-pixel text-xs">
+              ↻ MAIN LAGI
+            </button>
+            <button id="openLobbyBtn" class="pixel-btn py-3 px-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-pixel text-xs">
+              QR / LOBBY
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- FLOATING SPLIT-SCREEN SIMULATED PHONE CONTROLLER (For 1-Device Demo)-->
+      <!-- ================================================================= -->
+      <div id="simPhoneDrawer" class="hidden absolute bottom-3 right-3 z-40 w-[330px] max-w-[94vw] rounded-2xl border-4 border-slate-700 bg-slate-900/95 shadow-2xl p-3">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-1.5 mb-2">
+          <span class="font-pixel text-[9px] text-violet-300">📱 SIMULATOR KONTROLER HP</span>
+          <button id="closeSimDrawerBtn" class="text-xs px-2 py-0.5 bg-rose-600 text-white rounded font-bold">Tutup</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3 items-center">
+          <!-- Left / Right Steering -->
+          <div class="grid grid-cols-2 gap-2">
+            <button data-sim-btn="left" class="sim-pad-btn pixel-btn h-16 rounded-xl bg-slate-700 text-white font-pixel text-base flex items-center justify-center">◀</button>
+            <button data-sim-btn="right" class="sim-pad-btn pixel-btn h-16 rounded-xl bg-slate-700 text-white font-pixel text-base flex items-center justify-center">▶</button>
+          </div>
+          <!-- Gas & Nitro -->
+          <div class="grid grid-cols-2 gap-2">
+            <button data-sim-btn="boost" class="sim-pad-btn pixel-btn h-16 rounded-xl bg-cyan-500 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center">
+              <span>🔥</span>
+              <span>NITRO</span>
+            </button>
+            <button data-sim-btn="gas" class="sim-pad-btn pixel-btn h-16 rounded-xl bg-emerald-500 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center">
+              <span>▲</span>
+              <span>GAS</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 2: MOBILE PHONE CONTROLLER VIEW (OPENED VIA QR SCAN / PIN)       -->
+  <!-- ===================================================================== -->
+  <div id="controllerView" class="hidden controller-surface relative w-full h-full flex flex-col justify-between bg-slate-950 p-3 sm:p-5">
+
+    <!-- Step A: Manual PIN Entry & In-App QR Scanner Card -->
+    <div id="pinJoinOverlay" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-slate-950/95 overflow-y-auto">
+      <div class="pixel-card w-full max-w-md rounded-xl p-5 text-center my-auto">
+        <div class="font-pixel text-sm sm:text-base text-amber-400 mb-1.5">HUBUNGKAN KONTROLER HP</div>
+        <p class="text-base sm:text-lg text-slate-300 mb-3 leading-snug">
+          Scan QR Code di layar PC atau masukkan <b>4 karakter PIN ROOM</b>:
+        </p>
+
+        <!-- In-App Camera QR Scanner Viewfinder -->
+        <div id="qrScannerBox" class="hidden mb-3 rounded-lg overflow-hidden border-2 border-amber-400 bg-black relative">
+          <video id="qrScannerVideo" class="w-full h-48 object-cover" playsinline muted></video>
+          <canvas id="qrScannerCanvas" class="hidden"></canvas>
+          <div class="absolute inset-x-6 top-1/2 h-0.5 bg-rose-500 shadow-[0_0_8px_#f43f5e]"></div>
+          <button id="stopQrScanBtn" class="absolute bottom-2 right-2 px-2.5 py-1 rounded bg-rose-600 text-white font-pixel text-[9px]">
+            BATAL SCAN
+          </button>
+        </div>
+
+        <button id="startQrScanBtn" class="pixel-btn w-full py-2.5 mb-3 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-pixel text-[10px] sm:text-xs flex items-center justify-center gap-2">
+          📷 SCAN QR DI LAYAR PC
+        </button>
+
+        <div class="text-xs text-slate-400 uppercase mb-1.5">— ATAU KETIK KODE PIN MANUAL —</div>
+
+        <input id="manualPinInput" type="text" maxlength="4" placeholder="ABCD" autocomplete="off"
+          class="w-full text-center uppercase font-pixel text-2xl tracking-[0.4em] py-2.5 px-4 rounded-lg bg-slate-900 border-2 border-sky-400 text-amber-300 focus:outline-none mb-3" />
+
+        <div class="flex flex-col gap-2">
+          <button id="joinRoomByPinBtn" class="pixel-btn w-full py-3 rounded-lg bg-emerald-500 text-slate-950 font-pixel text-xs">
+            🔗 SAMBUNGKAN KE LAYAR
+          </button>
+          <button id="backToHostBtn" class="pixel-btn w-full py-2 rounded-lg bg-slate-700 text-white font-pixel text-[10px]">
+            ← Kembali ke Layar Game Utama
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Controller Status Bar -->
+    <div class="flex items-center justify-between gap-2 bg-slate-900 border-2 border-slate-700 rounded-xl px-3 py-2">
+      <div class="flex items-center gap-2">
+        <span id="ctrlConnDot" class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+        <div>
+          <div class="font-pixel text-[9px] sm:text-[11px] text-amber-400">ROOM: <span id="ctrlRoomLabel">----</span></div>
+          <div id="ctrlConnText" class="text-xs sm:text-sm text-slate-300 leading-none">Menghubungkan...</div>
+        </div>
+      </div>
+
+      <!-- Mini Live Dashboard synced from TV/PC -->
+      <div class="flex items-center gap-3 bg-slate-950 px-3 py-1 rounded-lg border border-slate-800">
+        <div class="text-center leading-none">
+          <div class="text-[10px] text-slate-400">SPEED</div>
+          <div class="font-pixel text-[10px] sm:text-xs text-emerald-400"><span id="ctrlSpeedVal">0</span></div>
+        </div>
+        <div class="text-center leading-none">
+          <div class="text-[10px] text-slate-400">SKOR</div>
+          <div class="font-pixel text-[10px] sm:text-xs text-amber-400"><span id="ctrlScoreVal">0</span></div>
+        </div>
+      </div>
+
+      <!-- Mode Switch: Touch D-Pad vs Tilt Gyroscope -->
+      <div class="flex items-center gap-1.5">
+        <button id="toggleTiltBtn" class="pixel-btn px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-pixel text-[9px]" title="Gunakan sensor miring HP">
+          📐 SETIR MIRING: OFF
+        </button>
+        <button id="ctrlDisconnectBtn" class="pixel-btn px-2 py-1.5 rounded-lg bg-slate-700 text-slate-200 font-pixel text-[9px]">
+          PIN
+        </button>
+      </div>
+    </div>
+
+    <!-- Center Action Strip: Horn + Start Trigger + Car Color -->
+    <div class="flex items-center justify-between gap-2 my-2 px-1">
+      <button id="ctrlHornBtn" class="pixel-btn flex-1 py-2.5 px-3 rounded-xl bg-amber-400 text-slate-950 font-pixel text-[10px] sm:text-xs flex items-center justify-center gap-2">
+        📯 KLAKSON
+      </button>
+
+      <button id="ctrlStartGameBtn" class="pixel-btn flex-1 py-2.5 px-3 rounded-xl bg-sky-400 text-slate-950 font-pixel text-[10px] sm:text-xs flex items-center justify-center gap-2">
+        ▶ START / ULANG
+      </button>
+    </div>
+
+    <!-- Main Ergonomic Gamepad Controls (Multi-Touch Enabled) -->
+    <div id="gamepadTouchArea" class="flex-1 grid grid-cols-2 gap-3 sm:gap-6 items-stretch py-1">
+
+      <!-- Left Side: Steering Controls (or Gyro Indicator) -->
+      <div id="dpadSteeringGroup" class="grid grid-cols-2 gap-2.5 sm:gap-4 h-full">
+        <button id="btnLeft" data-ctrl="left"
+          class="touch-ctrl-btn pixel-btn rounded-2xl bg-slate-800 active:bg-sky-500 border-4 border-slate-600 flex flex-col items-center justify-center text-white">
+          <span class="font-pixel text-3xl sm:text-5xl mb-1">◀</span>
+          <span class="font-pixel text-[10px] sm:text-xs text-slate-300">KIRI</span>
+        </button>
+
+        <button id="btnRight" data-ctrl="right"
+          class="touch-ctrl-btn pixel-btn rounded-2xl bg-slate-800 active:bg-sky-500 border-4 border-slate-600 flex flex-col items-center justify-center text-white">
+          <span class="font-pixel text-3xl sm:text-5xl mb-1">▶</span>
+          <span class="font-pixel text-[10px] sm:text-xs text-slate-300">KANAN</span>
+        </button>
+      </div>
+
+      <!-- Gyroscope Steering Visual Feedback (Shown when Tilt Mode is ON) -->
+      <div id="gyroSteeringGroup" class="hidden rounded-2xl bg-slate-900 border-4 border-indigo-500 flex flex-col items-center justify-center p-3 text-center">
+        <div class="font-pixel text-xs text-indigo-300 mb-2">MIRINGKAN HP SEPERTI SETIR!</div>
+        <div class="w-full h-6 bg-slate-950 rounded-full border-2 border-slate-700 relative overflow-hidden">
+          <div id="gyroBarIndicator" class="absolute top-0 bottom-0 w-6 bg-amber-400 rounded-full transition-transform duration-75" style="left: calc(50% - 12px);"></div>
+        </div>
+        <div id="gyroAngleText" class="text-sm text-slate-400 mt-2">Sudut: 0°</div>
+      </div>
+
+      <!-- Right Side: Pedals (Brake / Nitro / Gas) -->
+      <div class="grid grid-cols-2 gap-2.5 sm:gap-4 h-full">
+        <div class="flex flex-col gap-2.5 h-full">
+          <button id="btnBoost" data-ctrl="boost"
+            class="touch-ctrl-btn pixel-btn flex-1 rounded-2xl bg-cyan-500 border-4 border-cyan-200 flex flex-col items-center justify-center text-slate-950">
+            <span class="text-2xl sm:text-3xl">🔥</span>
+            <span class="font-pixel text-[10px] sm:text-xs">NITRO</span>
+          </button>
+
+          <button id="btnBrake" data-ctrl="brake"
+            class="touch-ctrl-btn pixel-btn h-20 sm:h-24 rounded-2xl bg-rose-600 border-4 border-rose-300 flex flex-col items-center justify-center text-white">
+            <span class="font-pixel text-[10px] sm:text-xs">REM</span>
+          </button>
+        </div>
+
+        <button id="btnGas" data-ctrl="gas"
+          class="touch-ctrl-btn pixel-btn h-full rounded-2xl bg-emerald-500 border-4 border-emerald-200 flex flex-col items-center justify-center text-slate-950">
+          <span class="font-pixel text-3xl sm:text-5xl mb-2">▲</span>
+          <span class="font-pixel text-xs sm:text-base">GAS</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Orientation Tip -->
+    <div class="text-center text-xs sm:text-sm text-slate-500 pt-1">
+      Tips: Putar HP ke posisi <b>Landscape (Miring)</b> untuk kenyamanan maksimal!
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC: FIREBASE SYNC, QR PAIRING, RETRO AUDIO & 16-BIT ENGINE -->
+  <!-- ===================================================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // =========================================================================
+    // 1. GLOBAL STATE & ENVIRONMENT SETUP
+    // =========================================================================
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'pixel-turbo-racer';
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let firebaseReady = false;
+
+    // Room & Role State
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialRoomFromUrl = (urlParams.get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+    let isControllerMode = Boolean(initialRoomFromUrl);
+    let roomCode = initialRoomFromUrl || generateRoomCode();
+    let localChannel = null;
+    let roomUnsubscribe = null;
+
+    // Controller Input State (Shared from Phone -> Host)
+    const remoteInput = {
+      left: false,
+      right: false,
+      gas: false,
+      brake: false,
+      boost: false,
+      steerAnalog: 0, // -1 to +1 for Tilt Steering
+      hornPulse: 0,
+      startPulse: 0,
+      connected: false,
+      lastSeen: 0
+    };
+
+    // Keyboard & Simulator Input State on Host
+    const localInput = {
+      left: false,
+      right: false,
+      gas: false,
+      brake: false,
+      boost: false
+    };
+
+    // Game Simulation State
+    const gameState = {
+      status: 'LOBBY', // 'LOBBY' | 'PLAYING' | 'GAMEOVER'
+      score: 0,
+      bestScore: 0,
+      distance: 0,
+      timeLeft: 60,
+      speed: 0,
+      maxSpeed: 280,
+      nitro: 100,
+      playerX: 0, // -1.0 (left edge) to +1.0 (right edge)
+      steerAngle: 0,
+      carColor: '#ef4444',
+      roadCurve: 0,
+      targetCurve: 0,
+      curveTimer: 0,
+      trackOffset: 0,
+      shakeTimer: 0,
+      flashTimer: 0,
+      biomeIndex: 0,
+      traffic: [],
+      pickups: [],
+      particles: [],
+      lastHornHandled: 0,
+      lastStartHandled: 0
+    };
+
+    // =========================================================================
+    // 2. UTILITY FUNCTIONS & TOAST UI
+    // =========================================================================
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 4; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return code;
+    }
+
+    let toastTimeout = null;
+    function showToast(msg, duration = 2600) {
+      const banner = document.getElementById('toastBanner');
+      const text = document.getElementById('toastText');
+      if (!banner || !text) return;
+      text.textContent = msg;
+      banner.classList.remove('hidden');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        banner.classList.add('hidden');
+      }, duration);
+    }
+
+    // =========================================================================
+    // 3. RETRO WEB AUDIO SYNTHESIZER (Engine, Horn, Nitro, Crash, Coin)
+    // =========================================================================
+    class RetroAudio {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.engineOsc = null;
+        this.engineGain = null;
+        this.started = false;
+      }
+
+      init() {
+        if (this.started) return;
+        try {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return;
+          this.ctx = new AudioCtx();
+
+          // Continuous Engine Hum Oscillator
+          this.engineOsc = this.ctx.createOscillator();
+          this.engineGain = this.ctx.createGain();
+          this.engineOsc.type = 'sawtooth';
+          this.engineOsc.frequency.value = 55;
+          this.engineGain.gain.value = 0.0;
+
+          // Lowpass filter to warm up the engine sound
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.value = 260;
+
+          this.engineOsc.connect(filter);
+          filter.connect(this.engineGain);
+          this.engineGain.connect(this.ctx.destination);
+          this.engineOsc.start();
+          this.started = true;
+        } catch (err) {
+          console.warn('Audio init skipped:', err);
+        }
+      }
+
+      updateEngine(speedRatio, isPlaying, isBoosting) {
+        if (!this.started || !this.ctx || !this.engineGain) return;
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+        if (this.muted || !isPlaying) {
+          this.engineGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.08);
+          return;
+        }
+        const baseFreq = 48 + speedRatio * 115 + (isBoosting ? 35 : 0);
+        this.engineOsc.frequency.setTargetAtTime(baseFreq, this.ctx.currentTime, 0.05);
+        this.engineGain.gain.setTargetAtTime(0.045 + speedRatio * 0.035, this.ctx.currentTime, 0.08);
+      }
+
+      playHorn() {
+        this.init();
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        [440, 554.37].forEach((freq) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        });
+      }
+
+      playPickup() {
+        this.init();
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.setValueAtTime(880, now + 0.07);
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.23);
+      }
+
+      playCrash() {
+        this.init();
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * 0.35;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        noise.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+      }
+    }
+    const audio = new RetroAudio();
+
+    // =========================================================================
+    // 4. FIREBASE FIRESTORE + BROADCAST CHANNEL MULTI-DEVICE SYNC
+    // =========================================================================
+    async function initRealtimeBackend() {
+      // Setup BroadcastChannel for instant zero-latency local tab sync
+      setupBroadcastChannel(roomCode);
+
+      try {
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+          const firebaseConfig = JSON.parse(__firebase_config);
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+
+          // RULE 3: Auth before any Firestore query
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+          currentUser = auth.currentUser;
+          firebaseReady = Boolean(db && currentUser);
+        }
+      } catch (err) {
+        console.warn('Cloud sync fallback to local channel:', err);
+        firebaseReady = false;
+      }
+
+      if (isControllerMode) {
+        connectControllerToRoom(roomCode);
+      } else {
+        initHostRoom(roomCode);
+      }
+    }
+
+    function setupBroadcastChannel(code) {
+      if (localChannel) {
+        try { localChannel.close(); } catch (_) {}
+      }
+      if ('BroadcastChannel' in window) {
+        localChannel = new BroadcastChannel(`pixel_turbo_${code}`);
+        localChannel.onmessage = (ev) => {
+          const msg = ev.data;
+          if (!msg) return;
+          if (!isControllerMode && msg.type === 'CTRL_INPUT') {
+            applyRemoteControllerPayload(msg.payload);
+          } else if (isControllerMode && msg.type === 'HOST_TELEMETRY') {
+            updateControllerTelemetryUI(msg.payload);
+          }
+        };
+      }
+    }
+
+    // RULE 1: Strict Path under /artifacts/{appId}/public/data/pixel_race_rooms/{roomCode}
+    function getRoomDocRef(code) {
+      return doc(db, 'artifacts', appId, 'public', 'data', 'pixel_race_rooms', code);
+    }
+
+    async function initHostRoom(code) {
+      document.getElementById('hudRoomCode').textContent = code;
+      document.getElementById('lobbyRoomCode').textContent = code;
+      renderQrCodeForRoom(code);
+
+      if (!firebaseReady || !currentUser) return;
+
+      try {
+        const roomRef = getRoomDocRef(code);
+        await setDoc(roomRef, {
+          roomCode: code,
+          hostUid: currentUser.uid,
+          createdAt: Date.now(),
+          ctrlConnected: false,
+          left: false,
+          right: false,
+          gas: false,
+          brake: false,
+          boost: false,
+          steerAnalog: 0,
+          hornPulse: 0,
+          startPulse: 0,
+          speed: 0,
+          score: 0,
+          status: gameState.status
+        });
+
+        if (roomUnsubscribe) roomUnsubscribe();
+        roomUnsubscribe = onSnapshot(
+          roomRef,
+          (snap) => {
+            if (!snap.exists()) return;
+            const data = snap.data();
+            applyRemoteControllerPayload(data);
+          },
+          (err) => {
+            console.warn('Firestore room listener error:', err);
+          }
+        );
+      } catch (err) {
+        console.warn('Failed to init host room doc:', err);
+      }
+    }
+
+    function applyRemoteControllerPayload(data) {
+      if (!data) return;
+      if (data.ctrlConnected) {
+        if (!remoteInput.connected) {
+          showToast('📱 HP Kontroler Berhasil Terhubung!');
+          audio.playPickup();
+        }
+        remoteInput.connected = true;
+        remoteInput.lastSeen = Date.now();
+        updatePhoneConnectedBadges(true);
+      }
+
+      remoteInput.left = Boolean(data.left);
+      remoteInput.right = Boolean(data.right);
+      remoteInput.gas = Boolean(data.gas);
+      remoteInput.brake = Boolean(data.brake);
+      remoteInput.boost = Boolean(data.boost);
+      remoteInput.steerAnalog = typeof data.steerAnalog === 'number' ? data.steerAnalog : 0;
+
+      // Handle remote horn trigger
+      if (data.hornPulse && data.hornPulse !== gameState.lastHornHandled) {
+        gameState.lastHornHandled = data.hornPulse;
+        audio.playHorn();
+        showToast('📯 TIN-TIN! Klakson dari HP!', 1200);
+      }
+
+      // Handle remote start/restart trigger
+      if (data.startPulse && data.startPulse !== gameState.lastStartHandled) {
+        gameState.lastStartHandled = data.startPulse;
+        if (gameState.status !== 'PLAYING') {
+          startNewRace();
+        }
+      }
+    }
+
+    function updatePhoneConnectedBadges(isConnected) {
+      const dot = document.getElementById('phoneStatusDot');
+      const label = document.getElementById('phoneStatusLabel');
+      const lobbyStatus = document.getElementById('lobbyPhoneStatus');
+
+      if (isConnected) {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+        label.textContent = 'HP Terkoneksi!';
+        label.className = 'text-emerald-400 font-bold';
+        if (lobbyStatus) {
+          lobbyStatus.innerHTML = `<span class="inline-block w-3 h-3 rounded-full bg-emerald-400"></span><span class="text-emerald-400">HP Terkoneksi! Siap Gas!</span>`;
+        }
+      } else {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+        label.textContent = 'Menunggu HP';
+        label.className = 'text-slate-300 font-bold';
+      }
+    }
+
+    // =========================================================================
+    // 5. QR CODE GENERATION (FOR PHONE PAIRING)
+    // =========================================================================
+    let customHostedBaseUrl = '';
+
+    function renderQrCodeForRoom(code) {
+      const container = document.getElementById('qrCodeBox');
+      const hint = document.getElementById('previewUrlHint');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const currentHref = window.location.href;
+      const isStandardWebUrl =
+        (currentHref.startsWith('http://') || currentHref.startsWith('https://')) &&
+        !currentHref.includes('srcdoc') &&
+        !currentHref.startsWith('blob:');
+
+      const activeBaseUrl = customHostedBaseUrl || (isStandardWebUrl ? currentHref.split('?')[0] : '');
+      const targetUrl = activeBaseUrl ? `${activeBaseUrl}?room=${code}` : `PIXEL-TURBO-ROOM:${code}`;
+
+      try {
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(container, {
+            text: targetUrl,
+            width: 148,
+            height: 148,
+            colorDark: '#090b12',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } else {
+          container.innerHTML = `<div class="p-4 text-slate-900 font-pixel text-xs">PIN: ${code}</div>`;
+        }
+      } catch (e) {
+        container.innerHTML = `<div class="p-4 text-slate-900 font-pixel text-xs">PIN: ${code}</div>`;
+      }
+
+      if (hint) {
+        if (activeBaseUrl) {
+          hint.innerHTML = `✅ <b>QR Aktif!</b> Scan pakai kamera HP atau buka:<br/><span class="text-sky-400 break-all text-xs">${targetUrl}</span>`;
+        } else {
+          hint.innerHTML = `⚠️ <b>Mode Preview Lokal:</b> Kamera HP biasa belum bisa membuka halaman preview ini sebelum di-upload ke web. Untuk tes sekarang: klik <b>Test Stik di Layar</b>, atau buka panduan di bawah.`;
+        }
+      }
+    }
+
+    // =========================================================================
+    // 6. MOBILE PHONE CONTROLLER LOGIC (TOUCH, GYRO, HAPTICS, SYNC)
+    // =========================================================================
+    const ctrlState = {
+      left: false,
+      right: false,
+      gas: false,
+      brake: false,
+      boost: false,
+      steerAnalog: 0,
+      hornPulse: 0,
+      startPulse: 0,
+      tiltEnabled: false
+    };
+
+    let lastSyncTimestamp = 0;
+    let pendingSyncTimer = null;
+    let qrVideoStream = null;
+    let qrScanAnimFrame = null;
+
+    function stopInAppQrScanner() {
+      if (qrScanAnimFrame) {
+        cancelAnimationFrame(qrScanAnimFrame);
+        qrScanAnimFrame = null;
+      }
+      if (qrVideoStream) {
+        qrVideoStream.getTracks().forEach((track) => track.stop());
+        qrVideoStream = null;
+      }
+      const box = document.getElementById('qrScannerBox');
+      if (box) box.classList.add('hidden');
+    }
+
+    async function startInAppQrScanner() {
+      const box = document.getElementById('qrScannerBox');
+      const video = document.getElementById('qrScannerVideo');
+      const scanCanvas = document.getElementById('qrScannerCanvas');
+      if (!box || !video || !scanCanvas) return;
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showToast('Kamera tidak didukung di browser ini. Ketik 4 kode PIN saja!');
+        return;
+      }
+
+      try {
+        qrVideoStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        video.srcObject = qrVideoStream;
+        await video.play();
+        box.classList.remove('hidden');
+
+        const scanCtx = scanCanvas.getContext('2d');
+        const tickScan = () => {
+          if (!qrVideoStream) return;
+          if (video.readyState === video.HAVE_ENOUGH_DATA && typeof jsQR !== 'undefined') {
+            scanCanvas.width = video.videoWidth;
+            scanCanvas.height = video.videoHeight;
+            scanCtx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+            const imgData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+            const codeObj = jsQR(imgData.data, imgData.width, imgData.height, {
+              inversionAttempts: 'dontInvert'
+            });
+
+            if (codeObj && codeObj.data) {
+              const raw = codeObj.data.trim();
+              let extractedPin = '';
+              const urlMatch = raw.match(/[?&]room=([A-Za-z0-9]{4})/i);
+              const prefixMatch = raw.match(/PIXEL-TURBO-ROOM:([A-Za-z0-9]{4})/i);
+              if (urlMatch) extractedPin = urlMatch[1].toUpperCase();
+              else if (prefixMatch) extractedPin = prefixMatch[1].toUpperCase();
+              else if (/^[A-Za-z0-9]{4}$/.test(raw)) extractedPin = raw.toUpperCase();
+
+              if (extractedPin.length === 4) {
+                stopInAppQrScanner();
+                document.getElementById('manualPinInput').value = extractedPin;
+                document.getElementById('pinJoinOverlay').classList.add('hidden');
+                showToast(`✅ QR Terbaca! Menghubungkan ke PIN ${extractedPin}...`);
+                connectControllerToRoom(extractedPin);
+                return;
+              }
+            }
+          }
+          qrScanAnimFrame = requestAnimationFrame(tickScan);
+        };
+        qrScanAnimFrame = requestAnimationFrame(tickScan);
+      } catch (err) {
+        stopInAppQrScanner();
+        showToast('Izin kamera ditolak/tidak tersedia. Silakan ketik 4 kode PIN di bawah.');
+      }
+    }
+
+    function switchToControllerView(targetCode) {
+      isControllerMode = true;
+      document.getElementById('hostView').classList.add('hidden');
+      document.getElementById('controllerView').classList.remove('hidden');
+
+      if (targetCode && targetCode.length === 4) {
+        roomCode = targetCode.toUpperCase();
+        document.getElementById('pinJoinOverlay').classList.add('hidden');
+        connectControllerToRoom(roomCode);
+      } else {
+        document.getElementById('pinJoinOverlay').classList.remove('hidden');
+      }
+    }
+
+    function switchToHostView() {
+      stopInAppQrScanner();
+      isControllerMode = false;
+      document.getElementById('controllerView').classList.add('hidden');
+      document.getElementById('hostView').classList.remove('hidden');
+      initHostRoom(roomCode);
+    }
+
+    async function connectControllerToRoom(code) {
+      roomCode = code.toUpperCase();
+      setupBroadcastChannel(roomCode);
+      document.getElementById('ctrlRoomLabel').textContent = roomCode;
+      document.getElementById('ctrlConnText').textContent = 'Terhubung ke Layar!';
+      document.getElementById('ctrlConnDot').className = 'w-3 h-3 rounded-full bg-emerald-400';
+
+      if (navigator.vibrate) {
+        try { navigator.vibrate(60); } catch (_) {}
+      }
+
+      // Immediately announce presence
+      pushControllerState(true);
+
+      if (!firebaseReady || !currentUser) return;
+      try {
+        const roomRef = getRoomDocRef(roomCode);
+        if (roomUnsubscribe) roomUnsubscribe();
+        roomUnsubscribe = onSnapshot(
+          roomRef,
+          (snap) => {
+            if (!snap.exists()) {
+              document.getElementById('ctrlConnText').textContent = 'Room tidak ditemukan / Menunggu Host';
+              document.getElementById('ctrlConnDot').className = 'w-3 h-3 rounded-full bg-amber-400 animate-pulse';
+              return;
+            }
+            const data = snap.data();
+            document.getElementById('ctrlConnText').textContent = 'Aktif • Siap Balapan!';
+            document.getElementById('ctrlConnDot').className = 'w-3 h-3 rounded-full bg-emerald-400';
+            updateControllerTelemetryUI(data);
+          },
+          (err) => {
+            console.warn('Controller snapshot error:', err);
+          }
+        );
+      } catch (err) {
+        console.warn('Controller connect error:', err);
+      }
+    }
+
+    function updateControllerTelemetryUI(data) {
+      if (!data) return;
+      const spdEl = document.getElementById('ctrlSpeedVal');
+      const scrEl = document.getElementById('ctrlScoreVal');
+      if (spdEl && typeof data.speed === 'number') spdEl.textContent = Math.round(data.speed);
+      if (scrEl && typeof data.score === 'number') scrEl.textContent = Math.floor(data.score);
+    }
+
+    function pushControllerState(forceImmediate = false) {
+      const payload = {
+        ctrlConnected: true,
+        left: ctrlState.left,
+        right: ctrlState.right,
+        gas: ctrlState.gas,
+        brake: ctrlState.brake,
+        boost: ctrlState.boost,
+        steerAnalog: ctrlState.steerAnalog,
+        hornPulse: ctrlState.hornPulse,
+        startPulse: ctrlState.startPulse
+      };
+
+      // 1. Instant local BroadcastChannel
+      if (localChannel) {
+        try {
+          localChannel.postMessage({ type: 'CTRL_INPUT', payload });
+        } catch (_) {}
+      }
+
+      // 2. Cloud Firestore throttled at ~55ms for smooth real-time responsiveness
+      if (!firebaseReady || !currentUser || !roomCode) return;
+      const now = Date.now();
+      const elapsed = now - lastSyncTimestamp;
+
+      const sendToFirestore = async () => {
+        lastSyncTimestamp = Date.now();
+        try {
+          const roomRef = getRoomDocRef(roomCode);
+          await updateDoc(roomRef, payload);
+        } catch (err) {
+          // If doc wasn't created yet, create it with setDoc merge
+          try {
+            const roomRef = getRoomDocRef(roomCode);
+            await setDoc(roomRef, payload, { merge: true });
+          } catch (_) {}
+        }
+      };
+
+      if (forceImmediate || elapsed >= 55) {
+        clearTimeout(pendingSyncTimer);
+        sendToFirestore();
+      } else {
+        clearTimeout(pendingSyncTimer);
+        pendingSyncTimer = setTimeout(sendToFirestore, 55 - elapsed);
+      }
+    }
+
+    // Multi-Touch Gamepad Handler (Supports holding GAS + steering LEFT/RIGHT simultaneously)
+    function setupMultiTouchGamepad() {
+      const area = document.getElementById('gamepadTouchArea');
+      if (!area) return;
+
+      const buttons = Array.from(document.querySelectorAll('.touch-ctrl-btn'));
+
+      function evaluateTouches(touchList) {
+        const nextState = { left: false, right: false, gas: false, brake: false, boost: false };
+
+        for (let i = 0; i < touchList.length; i++) {
+          const t = touchList[i];
+          const el = document.elementFromPoint(t.clientX, t.clientY);
+          const btn = el ? el.closest('.touch-ctrl-btn') : null;
+          if (btn && btn.dataset.ctrl) {
+            nextState[btn.dataset.ctrl] = true;
+          }
+        }
+
+        let changed = false;
+        ['left', 'right', 'gas', 'brake', 'boost'].forEach((key) => {
+          if (ctrlState[key] !== nextState[key]) {
+            ctrlState[key] = nextState[key];
+            changed = true;
+            if (nextState[key] && navigator.vibrate) {
+              try { navigator.vibrate(18); } catch (_) {}
+            }
+          }
+        });
+
+        buttons.forEach((btn) => {
+          const k = btn.dataset.ctrl;
+          btn.classList.toggle('pressed', Boolean(ctrlState[k]));
+        });
+
+        if (changed) {
+          pushControllerState(true);
+        }
+      }
+
+      area.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        evaluateTouches(e.touches);
+      }, { passive: false });
+
+      area.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        evaluateTouches(e.touches);
+      }, { passive: false });
+
+      area.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        evaluateTouches(e.touches);
+      }, { passive: false });
+
+      area.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        evaluateTouches(e.touches);
+      }, { passive: false });
+
+      // Mouse fallback for desktop testing of Controller View
+      buttons.forEach((btn) => {
+        const key = btn.dataset.ctrl;
+        btn.addEventListener('mousedown', () => {
+          ctrlState[key] = true;
+          btn.classList.add('pressed');
+          pushControllerState(true);
+        });
+        const release = () => {
+          if (ctrlState[key]) {
+            ctrlState[key] = false;
+            btn.classList.remove('pressed');
+            pushControllerState(true);
+          }
+        };
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+      });
+    }
+
+    // Gyroscope / Tilt Steering Handler on Mobile
+    function handleDeviceOrientation(event) {
+      if (!ctrlState.tiltEnabled) return;
+      // In landscape mode, beta controls left/right tilt; in portrait, gamma controls left/right
+      const isLandscape = window.innerWidth > window.innerHeight;
+      let rawAngle = isLandscape ? (event.beta || 0) : (event.gamma || 0);
+
+      // Clamp between -35 and +35 degrees with a small 4-degree deadzone
+      if (Math.abs(rawAngle) < 4) rawAngle = 0;
+      const clamped = Math.max(-35, Math.min(35, rawAngle));
+      const normalized = Number((clamped / 35).toFixed(2));
+
+      if (Math.abs(normalized - ctrlState.steerAnalog) >= 0.04) {
+        ctrlState.steerAnalog = normalized;
+        const bar = document.getElementById('gyroBarIndicator');
+        const txt = document.getElementById('gyroAngleText');
+        if (bar) bar.style.transform = `translateX(${normalized * 90}px)`;
+        if (txt) txt.textContent = `Sudut Setir: ${Math.round(clamped)}°`;
+        pushControllerState(false);
+      }
+    }
+
+    async function toggleTiltSteering() {
+      const btn = document.getElementById('toggleTiltBtn');
+      const dpad = document.getElementById('dpadSteeringGroup');
+      const gyroBox = document.getElementById('gyroSteeringGroup');
+
+      if (!ctrlState.tiltEnabled) {
+        // Request iOS 13+ DeviceOrientation permission if applicable
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          try {
+            const resp = await DeviceOrientationEvent.requestPermission();
+            if (resp !== 'granted') {
+              showToast('Izin sensor kemiringan ditolak browser.');
+              return;
+            }
+          } catch (err) {
+            showToast('Sensor kemiringan tidak tersedia di perangkat ini.');
+            return;
+          }
+        }
+        ctrlState.tiltEnabled = true;
+        window.addEventListener('deviceorientation', handleDeviceOrientation);
+        btn.textContent = '📐 SETIR MIRING: ON';
+        btn.classList.replace('bg-indigo-600', 'bg-amber-500');
+        btn.classList.replace('text-white', 'text-slate-950');
+        dpad.classList.add('hidden');
+        gyroBox.classList.remove('hidden');
+      } else {
+        ctrlState.tiltEnabled = false;
+        ctrlState.steerAnalog = 0;
+        window.removeEventListener('deviceorientation', handleDeviceOrientation);
+        btn.textContent = '📐 SETIR MIRING: OFF';
+        btn.classList.replace('bg-amber-500', 'bg-indigo-600');
+        btn.classList.replace('text-slate-950', 'text-white');
+        gyroBox.classList.add('hidden');
+        dpad.classList.remove('hidden');
+        pushControllerState(true);
+      }
+    }
+
+    // =========================================================================
+    // 7. 16-BIT PSEUDO-3D PIXEL RACING ENGINE (CANVAS RENDERER)
+    // =========================================================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Internal low-res arcade resolution for crisp pixel-art look
+    const VIRT_W = 360;
+    const VIRT_H = 240;
+
+    function resizeCanvas() {
+      canvas.width = VIRT_W;
+      canvas.height = VIRT_H;
+      ctx.imageSmoothingEnabled = false;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Biomes that cycle as player drives further
+    const BIOMES = [
+      {
+        name: 'PANTAI TROPIS',
+        skyTop: '#0284c7',
+        skyBottom: '#7dd3fc',
+        grassLight: '#fde047',
+        grassDark: '#facc15',
+        roadLight: '#334155',
+        roadDark: '#1e293b',
+        rumbleLight: '#ef4444',
+        rumbleDark: '#ffffff',
+        propType: 'palm'
+      },
+      {
+        name: 'KOTA NEON MALAM',
+        skyTop: '#090d16',
+        skyBottom: '#311042',
+        grassLight: '#1e1b4b',
+        grassDark: '#17153b',
+        roadLight: '#1e293b',
+        roadDark: '#0f172a',
+        rumbleLight: '#06b6d4',
+        rumbleDark: '#f43f5e',
+        propType: 'neon'
+      },
+      {
+        name: 'GURUN SENJA',
+        skyTop: '#9a3412',
+        skyBottom: '#fb923c',
+        grassLight: '#d97706',
+        grassDark: '#b45309',
+        roadLight: '#44403c',
+        roadDark: '#292524',
+        rumbleLight: '#f59e0b',
+        rumbleDark: '#fef3c7',
+        propType: 'cactus'
+      }
+    ];
+
+    function startNewRace() {
+      audio.init();
+      gameState.status = 'PLAYING';
+      gameState.score = 0;
+      gameState.distance = 0;
+      gameState.timeLeft = 60;
+      gameState.speed = 60;
+      gameState.nitro = 100;
+      gameState.playerX = 0;
+      gameState.steerAngle = 0;
+      gameState.roadCurve = 0;
+      gameState.targetCurve = 0;
+      gameState.traffic = [];
+      gameState.pickups = [];
+      gameState.particles = [];
+      gameState.shakeTimer = 0;
+
+      document.getElementById('lobbyOverlay').classList.add('hidden');
+      document.getElementById('gameOverOverlay').classList.add('hidden');
+      syncHostTelemetryToPhone(true);
+    }
+
+    function endRace() {
+      gameState.status = 'GAMEOVER';
+      if (gameState.score > gameState.bestScore) {
+        gameState.bestScore = Math.floor(gameState.score);
+      }
+      document.getElementById('finalScoreText').textContent = Math.floor(gameState.score);
+      document.getElementById('finalDistText').textContent = `${Math.floor(gameState.distance)} M`;
+      document.getElementById('bestScoreText').textContent = gameState.bestScore;
+      document.getElementById('gameOverOverlay').classList.remove('hidden');
+      syncHostTelemetryToPhone(true);
+    }
+
+    // Spawn Traffic Cars & Nitro/Coin Pickups
+    let spawnAccumulator = 0;
+    function updateTrafficAndPickups(dt) {
+      spawnAccumulator += dt * (gameState.speed / 120);
+      if (spawnAccumulator > 1.05) {
+        spawnAccumulator = 0;
+        const lanes = [-0.62, 0, 0.62];
+        const lane = lanes[Math.floor(Math.random() * lanes.length)];
+
+        if (Math.random() < 0.72) {
+          const colors = ['#38bdf8', '#a855f7', '#f97316', '#ec4899', '#e2e8f0'];
+          gameState.traffic.push({
+            x: lane,
+            z: 1.0, // 1.0 = horizon, 0.0 = camera/player
+            speed: 55 + Math.random() * 55,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            isPolice: Math.random() < 0.2
+          });
+        } else {
+          gameState.pickups.push({
+            x: lane,
+            z: 1.0,
+            type: Math.random() < 0.45 ? 'nitro' : 'coin'
+          });
+        }
+      }
+
+      // Move Traffic
+      for (let i = gameState.traffic.length - 1; i >= 0; i--) {
+        const car = gameState.traffic[i];
+        const relSpeed = (gameState.speed - car.speed) / 260;
+        car.z -= relSpeed * dt * 0.85;
+
+        // Collision check near player (z between 0.06 and 0.16)
+        if (car.z > 0.06 && car.z < 0.16 && Math.abs(car.x - gameState.playerX) < 0.34) {
+          audio.playCrash();
+          gameState.speed = Math.max(35, gameState.speed * 0.42);
+          gameState.shakeTimer = 0.35;
+          gameState.flashTimer = 0.2;
+          spawnExplosionParticles(VIRT_W / 2 + gameState.playerX * 95, VIRT_H - 36, '#f97316');
+          gameState.traffic.splice(i, 1);
+          continue;
+        }
+
+        if (car.z < -0.1 || car.z > 1.2) {
+          gameState.traffic.splice(i, 1);
+        }
+      }
+
+      // Move Pickups
+      for (let i = gameState.pickups.length - 1; i >= 0; i--) {
+        const item = gameState.pickups[i];
+        const relSpeed = gameState.speed / 260;
+        item.z -= relSpeed * dt * 0.85;
+
+        if (item.z > 0.05 && item.z < 0.18 && Math.abs(item.x - gameState.playerX) < 0.36) {
+          audio.playPickup();
+          if (item.type === 'nitro') {
+            gameState.nitro = Math.min(100, gameState.nitro + 38);
+            gameState.score += 150;
+            spawnExplosionParticles(VIRT_W / 2 + gameState.playerX * 95, VIRT_H - 36, '#22d3ee');
+          } else {
+            gameState.score += 250;
+            spawnExplosionParticles(VIRT_W / 2 + gameState.playerX * 95, VIRT_H - 36, '#facc15');
+          }
+          gameState.pickups.splice(i, 1);
+          continue;
+        }
+
+        if (item.z < -0.1) {
+          gameState.pickups.splice(i, 1);
+        }
+      }
+    }
+
+    function spawnExplosionParticles(px, py, color) {
+      for (let i = 0; i < 14; i++) {
+        gameState.particles.push({
+          x: px,
+          y: py,
+          vx: (Math.random() - 0.5) * 140,
+          vy: (Math.random() - 0.8) * 120,
+          life: 0.4 + Math.random() * 0.25,
+          color
+        });
+      }
+    }
+
+    // Main Physics & Input Update
+    function updateGame(dt) {
+      // Combine Keyboard + Simulator + Phone Remote Inputs
+      const phoneActive = remoteInput.connected && (Date.now() - remoteInput.lastSeen < 15000);
+      const goLeft = localInput.left || (phoneActive && remoteInput.left);
+      const goRight = localInput.right || (phoneActive && remoteInput.right);
+      const goGas = localInput.gas || (phoneActive && remoteInput.gas);
+      const goBrake = localInput.brake || (phoneActive && remoteInput.brake);
+      const wantBoost = localInput.boost || (phoneActive && remoteInput.boost);
+      const analogSteer = phoneActive ? remoteInput.steerAnalog : 0;
+
+      // In Lobby mode, run an attract-mode AI demo drive!
+      if (gameState.status === 'LOBBY') {
+        gameState.speed = 110;
+        gameState.trackOffset += gameState.speed * dt * 0.045;
+        gameState.curveTimer += dt;
+        gameState.roadCurve = Math.sin(gameState.curveTimer * 0.7) * 0.45;
+        gameState.playerX = Math.sin(gameState.curveTimer * 1.1) * 0.25;
+        audio.updateEngine(0, false, false);
+        return;
+      }
+
+      if (gameState.status !== 'PLAYING') {
+        audio.updateEngine(0, false, false);
+        return;
+      }
+
+      // Countdown Timer
+      gameState.timeLeft -= dt;
+      if (gameState.timeLeft <= 0) {
+        gameState.timeLeft = 0;
+        endRace();
+        return;
+      }
+
+      // Nitro Boost Logic
+      const isBoosting = wantBoost && gameState.nitro > 2 && (goGas || gameState.speed > 40);
+      if (isBoosting) {
+        gameState.nitro = Math.max(0, gameState.nitro - 28 * dt);
+      } else {
+        gameState.nitro = Math.min(100, gameState.nitro + 7 * dt);
+      }
+
+      // Acceleration & Braking
+      const currentTopSpeed = isBoosting ? 335 : gameState.maxSpeed;
+      if (goGas || isBoosting) {
+        gameState.speed += (isBoosting ? 185 : 115) * dt;
+      } else if (goBrake) {
+        gameState.speed -= 210 * dt;
+      } else {
+        // Gentle coasting deceleration (or auto-cruise minimum if phone is connected so kids/casuals can steer easily)
+        const minCruise = phoneActive ? 75 : 0;
+        if (gameState.speed > minCruise) {
+          gameState.speed -= 48 * dt;
+        } else {
+          gameState.speed += 50 * dt;
+        }
+      }
+
+      // Off-road slowdown
+      if (Math.abs(gameState.playerX) > 1.05) {
+        gameState.speed -= 130 * dt;
+        if (Math.random() < 0.35) {
+          spawnExplosionParticles(VIRT_W / 2 + gameState.playerX * 95, VIRT_H - 22, '#fde047');
+        }
+      }
+
+      gameState.speed = Math.max(0, Math.min(currentTopSpeed, gameState.speed));
+
+      // Steering
+      let steerInput = 0;
+      if (goLeft) steerInput -= 1;
+      if (goRight) steerInput += 1;
+      if (Math.abs(analogSteer) > 0.05) steerInput = analogSteer;
+
+      const steerResponsiveness = 1.75 * (0.35 + (gameState.speed / gameState.maxSpeed) * 0.75);
+      gameState.playerX += steerInput * steerResponsiveness * dt;
+
+      // Centrifugal pull on curves
+      gameState.playerX -= gameState.roadCurve * (gameState.speed / 280) * 0.65 * dt;
+      gameState.playerX = Math.max(-1.35, Math.min(1.35, gameState.playerX));
+      gameState.steerAngle = steerInput;
+
+      // Dynamic Road Curves & Biomes
+      gameState.curveTimer -= dt;
+      if (gameState.curveTimer <= 0) {
+        gameState.curveTimer = 2.5 + Math.random() * 3.0;
+        gameState.targetCurve = (Math.random() - 0.5) * 1.35;
+      }
+      gameState.roadCurve += (gameState.targetCurve - gameState.roadCurve) * dt * 1.2;
+
+      // Distance & Score Progression
+      const metersDelta = (gameState.speed / 3.6) * dt;
+      gameState.distance += metersDelta;
+      gameState.score += metersDelta * (isBoosting ? 4.5 : 2.2);
+      gameState.trackOffset += gameState.speed * dt * 0.055;
+      gameState.biomeIndex = Math.floor(gameState.distance / 750) % BIOMES.length;
+
+      if (gameState.shakeTimer > 0) gameState.shakeTimer -= dt;
+      if (gameState.flashTimer > 0) gameState.flashTimer -= dt;
+
+      updateTrafficAndPickups(dt);
+
+      // Update Particles
+      for (let i = gameState.particles.length - 1; i >= 0; i--) {
+        const p = gameState.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+        if (p.life <= 0) gameState.particles.splice(i, 1);
+      }
+
+      // Update Audio
+      audio.updateEngine(gameState.speed / 300, true, isBoosting);
+
+      // Update HUD
+      document.getElementById('hudScore').textContent = String(Math.floor(gameState.score)).padStart(5, '0');
+      document.getElementById('hudSpeed').textContent = Math.round(gameState.speed);
+      document.getElementById('hudNitroBar').style.width = `${Math.round(gameState.nitro)}%`;
+    }
+
+    // =========================================================================
+    // 8. PIXEL-ART SPRITE & PSEUDO-3D ROAD RENDERER
+    // =========================================================================
+    function renderGame() {
+      const biome = BIOMES[gameState.biomeIndex];
+      const horizonY = 92;
+
+      ctx.save();
+      if (gameState.shakeTimer > 0) {
+        const sx = Math.round((Math.random() - 0.5) * 6);
+        const sy = Math.round((Math.random() - 0.5) * 6);
+        ctx.translate(sx, sy);
+      }
+
+      // 1. Pixel Sky Gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+      skyGrad.addColorStop(0, biome.skyTop);
+      skyGrad.addColorStop(1, biome.skyBottom);
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, VIRT_W, horizonY);
+
+      // Sun / Moon & Distant Pixel Mountains
+      ctx.fillStyle = biome.name === 'KOTA NEON MALAM' ? '#f43f5e' : '#fef08a';
+      ctx.beginPath();
+      ctx.arc(VIRT_W * 0.75 - gameState.roadCurve * 25, 42, 16, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pixel Mountain Silhouette
+      ctx.fillStyle = biome.name === 'KOTA NEON MALAM' ? '#1e1b4b' : '#475569';
+      for (let mx = -40; mx < VIRT_W + 40; mx += 36) {
+        const shift = ((mx - gameState.roadCurve * 35) % (VIRT_W + 72));
+        const mh = 18 + Math.abs(Math.sin(mx * 0.13)) * 22;
+        ctx.fillRect(Math.round(shift), Math.round(horizonY - mh), 28, Math.round(mh));
+      }
+
+      // 2. Scanline Pseudo-3D Road & Grass Stripes
+      const roadHeight = VIRT_H - horizonY;
+      for (let y = 0; y < roadHeight; y++) {
+        const screenY = horizonY + y;
+        // Perspective depth factor (0 near horizon -> 1 at bottom)
+        const perspective = (y + 1) / roadHeight;
+        const zDepth = 1 / perspective;
+
+        // Alternating stripe phase for sense of speed
+        const stripePhase = Math.floor(zDepth * 2.2 + gameState.trackOffset) % 2 === 0;
+
+        // Grass / Ground row
+        ctx.fillStyle = stripePhase ? biome.grassLight : biome.grassDark;
+        ctx.fillRect(0, screenY, VIRT_W, 1);
+
+        // Road center X shifts with curve & player offset
+        const curveOffset = gameState.roadCurve * Math.pow(1 - perspective, 2) * 130;
+        const roadCenterX = VIRT_W / 2 + curveOffset - gameState.playerX * perspective * 95;
+        const halfRoadW = 14 + perspective * 132;
+        const rumbleW = Math.max(2, perspective * 12);
+
+        // Rumble strips
+        ctx.fillStyle = stripePhase ? biome.rumbleLight : biome.rumbleDark;
+        ctx.fillRect(Math.round(roadCenterX - halfRoadW - rumbleW), screenY, Math.round((halfRoadW + rumbleW) * 2), 1);
+
+        // Asphalt surface
+        ctx.fillStyle = stripePhase ? biome.roadLight : biome.roadDark;
+        ctx.fillRect(Math.round(roadCenterX - halfRoadW), screenY, Math.round(halfRoadW * 2), 1);
+
+        // Dashed Lane Dividers
+        if (stripePhase && perspective > 0.08) {
+          ctx.fillStyle = '#f8fafc';
+          const laneW = Math.max(1, Math.round(perspective * 3));
+          ctx.fillRect(Math.round(roadCenterX - halfRoadW * 0.34), screenY, laneW, 1);
+          ctx.fillRect(Math.round(roadCenterX + halfRoadW * 0.34), screenY, laneW, 1);
+        }
+      }
+
+      // 3. Roadside Pixel Props (Palm Trees, Neon Towers, Cacti)
+      for (let i = 12; i >= 1; i--) {
+        const zFrac = ((i - (gameState.trackOffset * 0.35) % 1) / 12);
+        if (zFrac <= 0.03 || zFrac > 1) continue;
+        const screenY = Math.round(horizonY + zFrac * roadHeight);
+        const curveOffset = gameState.roadCurve * Math.pow(1 - zFrac, 2) * 130;
+        const roadCenterX = VIRT_W / 2 + curveOffset - gameState.playerX * zFrac * 95;
+        const halfRoadW = 14 + zFrac * 132;
+        const scale = 0.25 + zFrac * 1.15;
+
+        drawRoadsideProp(Math.round(roadCenterX - halfRoadW - 22 * scale), screenY, scale, biome.propType);
+        drawRoadsideProp(Math.round(roadCenterX + halfRoadW + 22 * scale), screenY, scale, biome.propType);
+      }
+
+      // 4. Pickups (Coins & Nitro Orbs)
+      gameState.pickups.forEach((item) => {
+        const p = 1 - item.z;
+        if (p <= 0.02 || p > 1.05) return;
+        const screenY = Math.round(horizonY + p * roadHeight);
+        const curveOffset = gameState.roadCurve * Math.pow(1 - p, 2) * 130;
+        const roadCenterX = VIRT_W / 2 + curveOffset - gameState.playerX * p * 95;
+        const halfRoadW = 14 + p * 132;
+        const sx = Math.round(roadCenterX + item.x * halfRoadW);
+        const size = Math.max(4, Math.round(p * 16));
+
+        ctx.fillStyle = item.type === 'nitro' ? '#06b6d4' : '#facc15';
+        ctx.fillRect(sx - size / 2, screenY - size, size, size);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(sx - size / 2, screenY - size, size, size);
+      });
+
+      // 5. Rival Traffic Cars (Sorted far-to-near)
+      const sortedTraffic = [...gameState.traffic].sort((a, b) => b.z - a.z);
+      sortedTraffic.forEach((car) => {
+        const p = 1 - car.z;
+        if (p <= 0.02 || p > 1.05) return;
+        const screenY = Math.round(horizonY + p * roadHeight);
+        const curveOffset = gameState.roadCurve * Math.pow(1 - p, 2) * 130;
+        const roadCenterX = VIRT_W / 2 + curveOffset - gameState.playerX * p * 95;
+        const halfRoadW = 14 + p * 132;
+        const sx = Math.round(roadCenterX + car.x * halfRoadW);
+
+        drawPixelCar(sx, screenY, p * 1.15, car.color, 0, false, car.isPolice);
+      });
+
+      // 6. Player Pixel Car at Bottom Center
+      const playerScreenX = Math.round(VIRT_W / 2 + gameState.playerX * 32);
+      const playerScreenY = VIRT_H - 14;
+      const isBoosting = (localInput.boost || remoteInput.boost) && gameState.nitro > 2 && gameState.status === 'PLAYING';
+      drawPixelCar(playerScreenX, playerScreenY, 1.25, gameState.carColor, gameState.steerAngle, isBoosting, false);
+
+      // 7. Particles (Sparks, Dust, Boost Flames)
+      gameState.particles.forEach((pt) => {
+        ctx.fillStyle = pt.color;
+        ctx.fillRect(Math.round(pt.x), Math.round(pt.y), 3, 3);
+      });
+
+      // 8. In-Canvas Arcade Timer & Biome Tag (When Playing)
+      if (gameState.status === 'PLAYING') {
+        ctx.fillStyle = 'rgba(9, 11, 18, 0.75)';
+        ctx.fillRect(VIRT_W / 2 - 34, 6, 68, 22);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.strokeRect(VIRT_W / 2 - 34, 6, 68, 22);
+
+        ctx.fillStyle = gameState.timeLeft <= 10 ? '#f43f5e' : '#facc15';
+        ctx.font = 'bold 12px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(Math.ceil(gameState.timeLeft)).padStart(2, '0'), VIRT_W / 2, 22);
+
+        // Biome badge top-left
+        ctx.fillStyle = 'rgba(9, 11, 18, 0.65)';
+        ctx.fillRect(6, 6, 98, 14);
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '9px "VT323", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`STAGE: ${biome.name}`, 10, 16);
+      }
+
+      // Red damage flash
+      if (gameState.flashTimer > 0) {
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.28)';
+        ctx.fillRect(0, 0, VIRT_W, VIRT_H);
+      }
+
+      ctx.restore();
+    }
+
+    function drawRoadsideProp(x, y, scale, type) {
+      if (x < -30 || x > VIRT_W + 30) return;
+      const w = Math.max(3, Math.round(6 * scale));
+      const h = Math.max(8, Math.round(28 * scale));
+
+      if (type === 'palm') {
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(x - w / 2, y - h, w, h);
+        ctx.fillStyle = '#16a34a';
+        ctx.fillRect(x - w * 2.2, y - h - w, w * 4.4, w * 1.4);
+      } else if (type === 'neon') {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(x - w * 1.4, y - h * 1.5, w * 2.8, h * 1.5);
+        ctx.fillStyle = '#ec4899';
+        ctx.fillRect(x - w, y - h * 1.2, w * 2, Math.max(2, w * 0.7));
+      } else {
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(x - w / 2, y - h * 0.9, w, h * 0.9);
+        ctx.fillRect(x - w * 1.4, y - h * 0.6, w * 2.8, Math.max(2, w * 0.6));
+      }
+    }
+
+    function drawPixelCar(cx, bottomY, scale, bodyColor, steer, isBoosting, isPolice) {
+      const w = Math.round(34 * scale);
+      const h = Math.round(18 * scale);
+      const x = Math.round(cx - w / 2 + steer * 3);
+      const y = Math.round(bottomY - h);
+
+      // Ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fillRect(x - 2, bottomY - 3, w + 4, 4);
+
+      // Tires
+      ctx.fillStyle = '#090b12';
+      const tireW = Math.max(3, Math.round(5 * scale));
+      const tireH = Math.max(4, Math.round(7 * scale));
+      ctx.fillRect(x - 1, bottomY - tireH, tireW, tireH);
+      ctx.fillRect(x + w - tireW + 1, bottomY - tireH, tireW, tireH);
+
+      // Lower Chassis
+      ctx.fillStyle = bodyColor;
+      ctx.fillRect(x, y + Math.round(h * 0.35), w, Math.round(h * 0.55));
+
+      // Cabin / Roof
+      const cabinW = Math.round(w * 0.64);
+      const cabinX = Math.round(cx - cabinW / 2 + steer * 4);
+      ctx.fillStyle = isPolice ? '#ffffff' : bodyColor;
+      ctx.fillRect(cabinX, y, cabinW, Math.round(h * 0.42));
+
+      // Rear Windshield
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(cabinX + 2, y + 2, cabinW - 4, Math.max(2, Math.round(h * 0.25)));
+
+      // Police Siren Bar
+      if (isPolice) {
+        const blink = Math.floor(Date.now() / 140) % 2 === 0;
+        ctx.fillStyle = blink ? '#ef4444' : '#3b82f6';
+        ctx.fillRect(cabinX + 3, y - 3, Math.round(cabinW / 2) - 3, 3);
+        ctx.fillStyle = blink ? '#3b82f6' : '#ef4444';
+        ctx.fillRect(cabinX + Math.round(cabinW / 2), y - 3, Math.round(cabinW / 2) - 3, 3);
+      }
+
+      // Tail Lights
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(x + 2, y + Math.round(h * 0.48), Math.max(3, Math.round(6 * scale)), Math.max(2, Math.round(3 * scale)));
+      ctx.fillRect(x + w - Math.max(5, Math.round(8 * scale)), y + Math.round(h * 0.48), Math.max(3, Math.round(6 * scale)), Math.max(2, Math.round(3 * scale)));
+
+      // Nitro Exhaust Flames
+      if (isBoosting) {
+        ctx.fillStyle = Math.random() < 0.5 ? '#22d3ee' : '#facc15';
+        const flameH = Math.round((6 + Math.random() * 6) * scale);
+        ctx.fillRect(x + 5, bottomY - 2, 4, flameH);
+        ctx.fillRect(x + w - 9, bottomY - 2, 4, flameH);
+      }
+    }
+
+    // Periodically send live telemetry back to connected Phone Controller
+    let lastTelemetryPush = 0;
+    function syncHostTelemetryToPhone(force = false) {
+      const now = Date.now();
+      if (!force && now - lastTelemetryPush < 450) return;
+      lastTelemetryPush = now;
+
+      const telemetry = {
+        speed: Math.round(gameState.speed),
+        score: Math.floor(gameState.score),
+        status: gameState.status
+      };
+
+      if (localChannel) {
+        try {
+          localChannel.postMessage({ type: 'HOST_TELEMETRY', payload: telemetry });
+        } catch (_) {}
+      }
+
+      if (firebaseReady && currentUser && remoteInput.connected) {
+        const roomRef = getRoomDocRef(roomCode);
+        updateDoc(roomRef, telemetry).catch(() => {});
+      }
+    }
+
+    // =========================================================================
+    // 9. EVENT LISTENERS (KEYBOARD, BUTTONS, SIMULATOR, LOBBY)
+    // =========================================================================
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') localInput.left = true;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') localInput.right = true;
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') localInput.gas = true;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') localInput.brake = true;
+      if (e.code === 'Space') {
+        localInput.boost = true;
+        if (gameState.status === 'LOBBY') startNewRace();
+      }
+      if (e.key === 'h' || e.key === 'H') audio.playHorn();
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') localInput.left = false;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') localInput.right = false;
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') localInput.gas = false;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') localInput.brake = false;
+      if (e.code === 'Space') localInput.boost = false;
+    });
+
+    // Host UI Buttons
+    document.getElementById('startRaceBtn').addEventListener('click', startNewRace);
+    document.getElementById('restartRaceBtn').addEventListener('click', startNewRace);
+
+    document.getElementById('openLobbyBtn').addEventListener('click', () => {
+      gameState.status = 'LOBBY';
+      document.getElementById('gameOverOverlay').classList.add('hidden');
+      document.getElementById('lobbyOverlay').classList.remove('hidden');
+    });
+
+    document.getElementById('toggleQrModalBtn').addEventListener('click', () => {
+      const lobby = document.getElementById('lobbyOverlay');
+      lobby.classList.toggle('hidden');
+    });
+
+    // Manual / Guide Modal Controls
+    const manualModal = document.getElementById('manualModal');
+    document.getElementById('openManualBtn').addEventListener('click', () => manualModal.classList.remove('hidden'));
+    document.getElementById('lobbyManualBtn').addEventListener('click', () => manualModal.classList.remove('hidden'));
+    document.getElementById('closeManualBtn').addEventListener('click', () => manualModal.classList.add('hidden'));
+    document.getElementById('manualGotItBtn').addEventListener('click', () => manualModal.classList.add('hidden'));
+
+    document.getElementById('applyCustomUrlBtn').addEventListener('click', () => {
+      const rawUrl = document.getElementById('customHostUrlInput').value.trim();
+      if (!rawUrl || (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://'))) {
+        showToast('Masukkan URL valid yang diawali http:// atau https://');
+        return;
+      }
+      customHostedBaseUrl = rawUrl.split('?')[0];
+      renderQrCodeForRoom(roomCode);
+      manualModal.classList.add('hidden');
+      showToast('✅ QR Code diperbarui dengan link web kamu!');
+    });
+
+    document.getElementById('muteAudioBtn').addEventListener('click', (e) => {
+      audio.init();
+      audio.muted = !audio.muted;
+      e.currentTarget.textContent = audio.muted ? '🔇' : '🔊';
+    });
+
+    // Car Color Swatches
+    document.querySelectorAll('.color-swatch').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.color-swatch').forEach((b) => b.classList.remove('ring-2', 'ring-amber-400'));
+        btn.classList.add('ring-2', 'ring-amber-400');
+        gameState.carColor = btn.dataset.color;
+      });
+    });
+
+    // Copy Room Link (using execCommand fallback for iframe compatibility)
+    document.getElementById('copyRoomLinkBtn').addEventListener('click', () => {
+      const baseUrl = window.location.href.split('?')[0];
+      const shareText = (baseUrl.startsWith('http://') || baseUrl.startsWith('https://'))
+        ? `${baseUrl}?room=${roomCode}`
+        : `PIN Room Pixel Turbo: ${roomCode}`;
+
+      const tempInput = document.createElement('input');
+      tempInput.value = shareText;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        showToast('📋 Link / PIN Room berhasil disalin!');
+      } catch (_) {
+        showToast(`PIN Room: ${roomCode}`);
+      }
+      document.body.removeChild(tempInput);
+    });
+
+    // Switch between Host View & Controller View
+    document.getElementById('switchToPhoneModeBtn').addEventListener('click', () => {
+      switchToControllerView('');
+    });
+
+    document.getElementById('backToHostBtn').addEventListener('click', () => {
+      switchToHostView();
+    });
+
+    document.getElementById('ctrlDisconnectBtn').addEventListener('click', () => {
+      document.getElementById('pinJoinOverlay').classList.remove('hidden');
+    });
+
+    document.getElementById('joinRoomByPinBtn').addEventListener('click', () => {
+      const val = document.getElementById('manualPinInput').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (val.length !== 4) {
+        showToast('Masukkan 4 karakter PIN Room yang valid!');
+        return;
+      }
+      stopInAppQrScanner();
+      document.getElementById('pinJoinOverlay').classList.add('hidden');
+      connectControllerToRoom(val);
+    });
+
+    // In-App QR Scanner Buttons
+    document.getElementById('startQrScanBtn').addEventListener('click', startInAppQrScanner);
+    document.getElementById('stopQrScanBtn').addEventListener('click', stopInAppQrScanner);
+
+    // Controller Special Actions (Horn & Remote Start)
+    document.getElementById('ctrlHornBtn').addEventListener('click', () => {
+      ctrlState.hornPulse = Date.now();
+      if (navigator.vibrate) {
+        try { navigator.vibrate([40, 40, 60]); } catch (_) {}
+      }
+      pushControllerState(true);
+    });
+
+    document.getElementById('ctrlStartGameBtn').addEventListener('click', () => {
+      ctrlState.startPulse = Date.now();
+      if (navigator.vibrate) {
+        try { navigator.vibrate(50); } catch (_) {}
+      }
+      pushControllerState(true);
+    });
+
+    document.getElementById('toggleTiltBtn').addEventListener('click', toggleTiltSteering);
+
+    // Split-Screen Simulator Drawer (For instant 1-screen testing)
+    const simDrawer = document.getElementById('simPhoneDrawer');
+    document.getElementById('toggleSimControllerBtn').addEventListener('click', () => {
+      simDrawer.classList.toggle('hidden');
+      remoteInput.connected = true;
+      remoteInput.lastSeen = Date.now();
+      updatePhoneConnectedBadges(true);
+    });
+    document.getElementById('lobbySimBtn').addEventListener('click', () => {
+      simDrawer.classList.remove('hidden');
+      remoteInput.connected = true;
+      remoteInput.lastSeen = Date.now();
+      updatePhoneConnectedBadges(true);
+      startNewRace();
+    });
+    document.getElementById('closeSimDrawerBtn').addEventListener('click', () => {
+      simDrawer.classList.add('hidden');
+    });
+
+    document.querySelectorAll('.sim-pad-btn').forEach((btn) => {
+      const key = btn.dataset.simBtn;
+      const press = (e) => {
+        e.preventDefault();
+        localInput[key] = true;
+        btn.classList.add('pressed');
+      };
+      const release = (e) => {
+        e.preventDefault();
+        localInput[key] = false;
+        btn.classList.remove('pressed');
+      };
+      btn.addEventListener('mousedown', press);
+      btn.addEventListener('mouseup', release);
+      btn.addEventListener('mouseleave', release);
+      btn.addEventListener('touchstart', press, { passive: false });
+      btn.addEventListener('touchend', release, { passive: false });
+    });
+
+    // =========================================================================
+    // 10. MAIN ANIMATION LOOP & BOOTSTRAP
+    // =========================================================================
+    let lastFrameTime = performance.now();
+    function mainLoop(now) {
+      const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+      lastFrameTime = now;
+
+      if (!isControllerMode) {
+        updateGame(dt);
+        renderGame();
+        syncHostTelemetryToPhone(false);
+      }
+
+      requestAnimationFrame(mainLoop);
+    }
+
+    window.onload = async function () {
+      setupMultiTouchGamepad();
+
+      if (isControllerMode) {
+        switchToControllerView(initialRoomFromUrl);
+      } else {
+        document.getElementById('hostView').classList.remove('hidden');
+      }
+
+      await initRealtimeBackend();
+      requestAnimationFrame(mainLoop);
+    };
+  </script>
+</body>
+</html>
