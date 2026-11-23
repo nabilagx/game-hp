@@ -216,7 +216,7 @@
       #controllerView .mole-pad-btn { transition: none; }
     }
 
-  #gameStageView{height:100dvh;min-height:0} #gameStageView>main{min-height:0;flex:1 1 auto} #gameStageView canvas{width:100%;height:100%;object-fit:fill}
+  #categoryFilterBar button:nth-child(n+3){display:none} #gameStageView{height:100dvh;min-height:0} #gameStageView>main{min-height:0;flex:1 1 auto} #gameStageView canvas{width:100%;height:100%;object-fit:fill}
   @media(max-width:700px){#gameStageView>header{padding:5px 7px;gap:5px;border-bottom-width:2px}#gameStageView #toggleSimPadBtn{display:none}#gameStageView #activeGameBadge{max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#gameStageView>main{height:calc(100dvh - 52px)}}
   #controllerView{height:100dvh;min-height:100dvh;overflow:hidden;padding:max(8px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
   </style>
@@ -314,13 +314,13 @@
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div class="flex flex-wrap gap-1.5" id="categoryFilterBar">
             <button data-cat="all" class="cat-tab pixel-btn px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-pixel text-[9px]">
-              🕹️ SEMUA (20)
+              🕹️ SEMUA (2)
             </button>
             <button data-cat="edu" class="cat-tab pixel-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 font-pixel text-[9px]">
-              🎓 EDU & PARTY (5)
+              🏎️ RACING
             </button>
             <button data-cat="arcade" class="cat-tab pixel-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 font-pixel text-[9px]">
-              ⚡ ARCADE AKSI (5)
+              🎹 PIANO
             </button>
             <button data-cat="sports" class="cat-tab pixel-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 font-pixel text-[9px]">
               🏆 OLAHRAGA & DUEL (5)
@@ -640,30 +640,19 @@
     <!-- =================================================================== -->
     <!-- ADAPTIVE PAD MODE 2: 4 COLOR / QUIZ / RHYTHM / SIMON BUTTONS        -->
     <!-- =================================================================== -->
-    <div id="padFourColors" class="hidden flex-1 flex flex-col gap-2.5 py-2">
-      <button id="ctrlBuzzerBtn" class="pixel-btn py-3 rounded-xl bg-rose-600 border-4 border-rose-300 text-white font-pixel text-xs sm:text-sm">
-        🔔 TEKAN BEL REBUTAN / MULAI!
-      </button>
-      <div class="flex-1 grid grid-cols-2 gap-3">
-        <button data-color-idx="0" class="color-pad-btn pixel-btn rounded-2xl bg-rose-500 border-4 border-rose-200 text-white font-pixel text-sm sm:text-lg flex flex-col items-center justify-center">
-          <span>A / MERAH</span>
-          <span class="text-xs font-vt mt-1">PILIHAN 1</span>
-        </button>
-        <button data-color-idx="1" class="color-pad-btn pixel-btn rounded-2xl bg-amber-400 border-4 border-amber-100 text-slate-950 font-pixel text-sm sm:text-lg flex flex-col items-center justify-center">
-          <span>B / KUNING</span>
-          <span class="text-xs font-vt mt-1">PILIHAN 2</span>
-        </button>
-        <button data-color-idx="2" class="color-pad-btn pixel-btn rounded-2xl bg-emerald-500 border-4 border-emerald-200 text-slate-950 font-pixel text-sm sm:text-lg flex flex-col items-center justify-center">
-          <span>C / HIJAU</span>
-          <span class="text-xs font-vt mt-1">PILIHAN 3</span>
-        </button>
-        <button data-color-idx="3" class="color-pad-btn pixel-btn rounded-2xl bg-sky-500 border-4 border-sky-200 text-slate-950 font-pixel text-sm sm:text-lg flex flex-col items-center justify-center">
-          <span>D / BIRU</span>
-          <span class="text-xs font-vt mt-1">PILIHAN 4</span>
-        </button>
+    <div id="padFourColors" class="hidden flex-1 flex flex-col gap-2 py-2">
+      <button id="ctrlBuzzerBtn" class="pixel-btn py-2 rounded-xl bg-rose-600 border-4 border-rose-300 text-white font-pixel text-xs">🔔 MULAI</button>
+      <div class="flex-1 grid grid-cols-4 grid-rows-2 gap-2">
+        <button data-color-idx="0" class="color-pad-btn pixel-btn rounded-xl border-4 border-slate-300 bg-slate-100 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center"><span>DO</span><span class="text-xs font-vt mt-1">♪</span></button>
+        <button data-color-idx="1" class="color-pad-btn pixel-btn rounded-xl border-4 border-slate-300 bg-slate-100 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center"><span>RE</span><span class="text-xs font-vt mt-1">♪</span></button>
+        <button data-color-idx="2" class="color-pad-btn pixel-btn rounded-xl border-4 border-slate-300 bg-slate-100 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center"><span>MI</span><span class="text-xs font-vt mt-1">♪</span></button>
+        <button data-color-idx="3" class="color-pad-btn pixel-btn rounded-xl border-4 border-slate-300 bg-slate-100 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center"><span>FA</span><span class="text-xs font-vt mt-1">♪</span></button>
+        <button data-color-idx="4" class="color-pad-btn pixel-btn rounded-xl border-4 border-slate-300 bg-slate-100 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center"><span>SOL</span><span class="text-xs font-vt mt-1">♪</span></button>
+        <button data-color-idx="5" class="color-pad-btn pixel-btn rounded-xl border-4 border-slate-300 bg-slate-100 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center"><span>LA</span><span class="text-xs font-vt mt-1">♪</span></button>
+        <button data-color-idx="6" class="color-pad-btn pixel-btn rounded-xl border-4 border-slate-300 bg-slate-100 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center"><span>SI</span><span class="text-xs font-vt mt-1">♪</span></button>
+        <button data-color-idx="7" class="color-pad-btn pixel-btn rounded-xl border-4 border-slate-300 bg-slate-100 text-slate-950 font-pixel text-[10px] flex flex-col items-center justify-center"><span>DO+</span><span class="text-xs font-vt mt-1">♪</span></button>
       </div>
     </div>
-
     <!-- =================================================================== -->
     <!-- ADAPTIVE PAD MODE 3: WHAC-A-MOLE 3x3 GRID (9 HOLES)                 -->
     <!-- =================================================================== -->
@@ -3780,8 +3769,8 @@
       if (g.ctrl === 'piano') {
         padCol.classList.remove('hidden');
         document.getElementById('ctrlBuzzerBtn').classList.add('hidden');
-        const names=['DO','RE','MI','FA'];
-        document.querySelectorAll('.color-pad-btn').forEach((b,i)=>{b.innerHTML='<span>'+names[i]+'</span><span class="text-xs font-vt mt-1">NADA</span>';});
+        const names=['DO','RE','MI','FA','SOL','LA','SI','DO+'];
+        document.querySelectorAll('.color-pad-btn').forEach((b,i)=>{b.innerHTML='<span>'+names[i]+'</span><span class="text-xs font-vt mt-1">♪</span>';});
       } else if (g.ctrl === 'racing') {
         padStd.classList.remove('hidden');
         document.getElementById('leftPadContainer').classList.remove('hidden');
