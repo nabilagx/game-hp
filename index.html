@@ -358,6 +358,7 @@
         <div id="activeGameBadge" class="px-2.5 py-1 bg-rose-600 border-2 border-white rounded text-white font-pixel text-[9px] sm:text-xs">
           GAME #01
         </div>
+        <select id="carSkinSelect" aria-label="Pilih skin mobil" class="hidden max-w-[112px] rounded border border-amber-300 bg-slate-900 px-1.5 py-1 text-xs text-amber-200"><option value="#22c55e">🟢 Neon</option><option value="#38bdf8">🔵 Turbo</option><option value="#f43f5e">🔴 Inferno</option><option value="#facc15">🟡 Bolt</option><option value="#a78bfa">🟣 Galaxy</option></select>
 
         <button id="stageQrBtn" class="pixel-btn hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-pixel text-[9px]">
           📱 PIN: <strong id="stagePinText">----</strong>
@@ -733,7 +734,11 @@
     let activeGameId = 'quiz';
     let isGameOver = false;
     let currentScore = 0;
-    const highScores = {};
+    const guestSaveKey = 'nagalaArcadeGuestSaveV1';
+    let guestSave = { highScores: {}, carSkin: '#22c55e' };
+    try { guestSave = { ...guestSave, ...JSON.parse(localStorage.getItem(guestSaveKey) || '{}') }; } catch (_) {}
+    const highScores = guestSave.highScores || {};
+    function saveGuestProgress() { try { guestSave.highScores = highScores; guestSave.carSkin = streetRacerState.skin || guestSave.carSkin || '#22c55e'; localStorage.setItem(guestSaveKey, JSON.stringify(guestSave)); } catch (_) { showToast('Penyimpanan perangkat tidak tersedia'); } }
 
     // P2P & Sync Channels
     let localChannel = null;
