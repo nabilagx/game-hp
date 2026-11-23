@@ -265,7 +265,7 @@
       <section class="pixel-card rounded-2xl p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-7 text-center lg:text-left space-y-2">
           <div class="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-indigo-950 border border-indigo-400/60 text-indigo-200 text-sm">
-            <span>🎓 KOLEKSI LENGKAP 20 GAME PIXEL</span>
+            <span>🎓 KOLEKSI LENGKAP 21 GAME PIXEL</span>
             <span>•</span>
             <span class="text-amber-300 font-bold">NAGALA EDU</span>
           </div>
@@ -280,7 +280,7 @@
           </div>
 
           <p class="text-base sm:text-lg text-slate-300 leading-snug">
-            Pilih salah satu dari <b>20 Game Pixel Interaktif</b>! Kontroler HP otomatis menyesuaikan tombol (D-Pad, Kuis ABCD, Grid Pukul Tikus, Kanvas Gambar, hingga Keypad Kata).
+            Pilih salah satu dari <b>21 Game Pixel Interaktif</b>! Kontroler HP otomatis menyesuaikan tombol (D-Pad, Kuis ABCD, Grid Pukul Tikus, Kanvas Gambar, hingga Keypad Kata).
           </p>
         </div>
 
@@ -326,7 +326,7 @@
               🧩 STRATEGI & PUZZLE (5)
             </button>
           </div>
-          <span id="visibleGameCount" class="text-sm text-slate-400">Menampilkan 20 Game</span>
+          <span id="visibleGameCount" class="text-sm text-slate-400">Menampilkan 21 Game</span>
         </div>
 
         <!-- Dynamic 20-Game Cartridge Grid -->
@@ -335,7 +335,7 @@
 
       <!-- Footer Signature -->
       <footer class="text-center border-t border-slate-800/90 pt-3 pb-2 text-sm sm:text-base text-slate-400">
-        © 2026 <strong class="text-amber-300">Nagala Edu - Nabila Choirunisa</strong> • 20-in-1 Pixel Arcade Console dengan Kontroler HP Nirkabel
+        © 2026 <strong class="text-amber-300">Nagala Edu - Nabila Choirunisa</strong> • 21-in-1 Pixel Arcade Console dengan Kontroler HP Nirkabel
       </footer>
     </div>
   </div>
@@ -478,7 +478,7 @@
   <div id="manualModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-xs overflow-y-auto">
     <div class="pixel-card w-full max-w-2xl rounded-xl p-5 sm:p-6 text-left my-auto">
       <div class="flex items-center justify-between border-b-2 border-slate-700 pb-3 mb-4">
-        <h2 class="font-pixel text-xs sm:text-base text-amber-400">📱 KONEKSI HP & PANDUAN 20 GAME</h2>
+        <h2 class="font-pixel text-xs sm:text-base text-amber-400">📱 KONEKSI HP & PANDUAN 21 GAME</h2>
         <button id="closeManualBtn" class="pixel-btn px-3 py-1 rounded bg-rose-600 text-white font-pixel text-[10px]">TUTUP [X]</button>
       </div>
 
@@ -518,7 +518,7 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- VIEW 3: ADAPTIVE MOBILE PHONE CONTROLLER (SUPPORTS ALL 20 GAMES)      -->
+  <!-- VIEW 3: ADAPTIVE MOBILE PHONE CONTROLLER (SUPPORTS ALL 21 GAMES)      -->
   <!-- ===================================================================== -->
   <div id="controllerView" class="hidden controller-surface relative w-full h-full flex flex-col justify-between bg-slate-950 p-3 sm:p-4">
 
@@ -551,7 +551,7 @@
             🔗 SAMBUNGKAN SEKARANG
           </button>
           <button id="backToHostBtn" class="pixel-btn w-full py-2 rounded-lg bg-slate-700 text-white font-pixel text-[10px]">
-            ← Kembali ke Menu 20 Game
+            ← Kembali ke Menu 21 Game
           </button>
         </div>
       </div>
@@ -563,7 +563,7 @@
         <span id="ctrlConnDot" class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
         <div>
           <div class="font-pixel text-[9px] sm:text-[10px] text-amber-400">
-            ROOM <span id="ctrlRoomLabel">----</span> • <span id="ctrlActiveGameTag" class="text-sky-300">MENU 20 GAME</span>
+            ROOM <span id="ctrlRoomLabel">----</span> • <span id="ctrlActiveGameTag" class="text-sky-300">MENU 21 GAME</span>
           </div>
           <div id="ctrlConnText" class="text-xs sm:text-sm text-slate-300 leading-none">Menghubungkan P2P...</div>
         </div>
@@ -3441,6 +3441,152 @@
       ctx.strokeRect(Math.round(towerState.cursorX - 10), Math.round(towerState.cursorY - 10), 20, 20);
     }
 
+
+    // -------------------------------------------------------------------------
+    // GAME 21: PIXEL STREET RACER (ENDLESS TRAFFIC DODGE)
+    // -------------------------------------------------------------------------
+    const streetRacerState = {
+      lane: 1,
+      traffic: [],
+      spawnTimer: 0,
+      roadOffset: 0,
+      distance: 0,
+      speed: 118,
+      boost: 100,
+      flash: 0,
+      bestNearMiss: 0
+    };
+
+    function initStreetRacerGame() {
+      currentScore = 0;
+      Object.assign(streetRacerState, {
+        lane: 1, traffic: [], spawnTimer: 0.65, roadOffset: 0,
+        distance: 0, speed: 118, boost: 100, flash: 0, bestNearMiss: 0
+      });
+      for (let i = 0; i < 3; i++) {
+        streetRacerState.traffic.push({
+          lane: Math.floor(Math.random() * 3),
+          y: -45 - i * 105,
+          speed: 0.82 + Math.random() * 0.34,
+          color: ['#f97316', '#38bdf8', '#a78bfa', '#f43f5e', '#eab308'][i % 5],
+          passed: false
+        });
+      }
+    }
+
+    function updateStreetRacerGame(dt) {
+      const st = streetRacerState;
+      if (justPressed.left) st.lane = Math.max(0, st.lane - 1);
+      if (justPressed.right) st.lane = Math.min(2, st.lane + 1);
+
+      const boosting = getUnifiedInput().actionA && st.boost > 0;
+      st.boost = Math.max(0, Math.min(100, st.boost + (boosting ? -34 : 13) * dt));
+      st.speed = boosting ? 205 : 118;
+      st.roadOffset = (st.roadOffset + st.speed * dt) % 48;
+      st.distance += st.speed * dt;
+      st.flash = Math.max(0, st.flash - dt);
+      currentScore = Math.floor(st.distance * 1.4);
+
+      st.spawnTimer -= dt;
+      if (st.spawnTimer <= 0) {
+        const lastLane = st.traffic.length ? st.traffic[st.traffic.length - 1].lane : -1;
+        let lane = Math.floor(Math.random() * 3);
+        if (Math.random() < 0.65 && lane === lastLane) lane = (lane + 1 + Math.floor(Math.random() * 2)) % 3;
+        st.traffic.push({
+          lane, y: -48, speed: 0.78 + Math.random() * 0.42,
+          color: ['#f97316', '#38bdf8', '#a78bfa', '#f43f5e', '#eab308'][Math.floor(Math.random() * 5)],
+          passed: false
+        });
+        st.spawnTimer = Math.max(0.48, 1.02 - st.distance / 9000) + Math.random() * 0.24;
+      }
+
+      const playerY = 184;
+      for (let i = st.traffic.length - 1; i >= 0; i--) {
+        const car = st.traffic[i];
+        car.y += st.speed * car.speed * dt;
+        if (car.lane === st.lane && Math.abs(car.y - playerY) < 27) {
+          audio.playCrash();
+          triggerGameOver('CRASH! GAME OVER', 'Jarak: ' + Math.floor(st.distance) + ' m • Hindari mobil dan coba lagi!');
+          return;
+        }
+        if (!car.passed && car.y > playerY + 30) {
+          car.passed = true;
+          st.bestNearMiss++;
+          currentScore += 35;
+          audio.playTone(680, 0.035, 'square', 0.035);
+        }
+        if (car.y > VIRT_H + 55) st.traffic.splice(i, 1);
+      }
+      updateTopHud(currentScore, 'JARAK', Math.floor(st.distance) + 'M', 'BOOST', Math.floor(st.boost) + '%');
+    }
+
+    function drawPixelCar(x, y, color, player = false) {
+      ctx.fillStyle = '#080b13';
+      ctx.fillRect(x - 13, y - 19, 26, 40);
+      ctx.fillStyle = color;
+      ctx.fillRect(x - 10, y - 18, 20, 36);
+      ctx.fillRect(x - 13, y - 8, 26, 17);
+      ctx.fillStyle = player ? '#dbeafe' : '#cbd5e1';
+      ctx.fillRect(x - 7, y - 12, 14, 8);
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(x - 7, y + 5, 14, 7);
+      ctx.fillStyle = player ? '#fef08a' : '#fca5a5';
+      ctx.fillRect(x - 9, player ? y - 19 : y + 14, 5, 3);
+      ctx.fillRect(x + 4, player ? y - 19 : y + 14, 5, 3);
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(x - 15, y - 12, 4, 9);
+      ctx.fillRect(x + 11, y - 12, 4, 9);
+      ctx.fillRect(x - 15, y + 8, 4, 9);
+      ctx.fillRect(x + 11, y + 8, 4, 9);
+      if (player) {
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(x - 4, y + 19, 8, 5);
+      }
+    }
+
+    function renderStreetRacerGame() {
+      const st = streetRacerState;
+      ctx.fillStyle = '#166534';
+      ctx.fillRect(0, 0, VIRT_W, VIRT_H);
+      ctx.fillStyle = '#14532d';
+      for (let y = -24 + (st.roadOffset % 36); y < VIRT_H; y += 36) {
+        ctx.fillRect(4, y, 22, 12);
+        ctx.fillRect(VIRT_W - 26, y, 22, 12);
+      }
+      const roadX = 34, roadW = 292;
+      ctx.fillStyle = '#303744';
+      ctx.fillRect(roadX, 0, roadW, VIRT_H);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(roadX + 3, 0, 3, VIRT_H);
+      ctx.fillRect(roadX + roadW - 6, 0, 3, VIRT_H);
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(roadX + 8, 0, 3, VIRT_H);
+      ctx.fillRect(roadX + roadW - 11, 0, 3, VIRT_H);
+      ctx.fillStyle = 'rgba(255,255,255,.72)';
+      for (let y = -42 + st.roadOffset; y < VIRT_H; y += 48) {
+        ctx.fillRect(roadX + 98, y, 3, 25);
+        ctx.fillRect(roadX + 192, y, 3, 25);
+      }
+      const laneX = [roadX + 51, roadX + 145, roadX + 239];
+      st.traffic.forEach((car) => drawPixelCar(laneX[car.lane], car.y, car.color));
+      drawPixelCar(laneX[st.lane], 184, '#22c55e', true);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('BOOST', 9, 15);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(9, 21, 42, 6);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(10, 22, 40 * (st.boost / 100), 4);
+      ctx.fillStyle = '#fef08a';
+      ctx.textAlign = 'right';
+      ctx.fillText(Math.floor(st.distance) + 'M', VIRT_W - 8, 15);
+      if (st.flash > 0) {
+        ctx.fillStyle = 'rgba(248,113,113,.22)';
+        ctx.fillRect(0, 0, VIRT_W, VIRT_H);
+      }
+    }
+
     // =========================================================================
     // 6. MASTER 20-GAME CATALOG REGISTRY
     // =========================================================================
@@ -3467,7 +3613,8 @@
       { id: 'tetris', num: '17', cat: 'puzzle', badge: 'PUZZLE', icon: '🧱', title: 'Tetris Block Drop', desc: 'Susun balok jatuh & bersihkan baris untuk kombo skor!', ctrl: 'dpad2', init: initTetrisGame, update: updateTetrisGame, render: renderTetrisGame },
       { id: 'whacamole', num: '18', cat: 'puzzle', badge: 'REFLEKS', icon: '🔨', title: 'Whac-A-Mole 3×3', desc: 'Pukul tikus tanah pada 9 lubang grid 3×3 & hindari bom!', ctrl: 'grid9', init: initWhacAMoleGame, update: updateWhacAMoleGame, render: renderWhacAMoleGame },
       { id: 'rhythm', num: '19', cat: 'puzzle', badge: 'MUSIK', icon: '🎸', title: 'Rhythm Guitar Pixel', desc: 'Tekan 4 jalur warna tepat mengikuti ketukan musik chiptune!', ctrl: 'colors4', init: initRhythmGame, update: updateRhythmGame, render: renderRhythmGame },
-      { id: 'tower', num: '20', cat: 'puzzle', badge: 'STRATEGI', icon: '🏰', title: 'Tower Defense Kingdom', desc: 'Bangun menara panah (A) & sihir (B) untuk menjaga kastil!', ctrl: 'dpad4', init: initTowerDefenseGame, update: updateTowerDefenseGame, render: renderTowerDefenseGame }
+      { id: 'tower', num: '20', cat: 'puzzle', badge: 'STRATEGI', icon: '🏰', title: 'Tower Defense Kingdom', desc: 'Bangun menara panah (A) & sihir (B) untuk menjaga kastil!', ctrl: 'dpad4', init: initTowerDefenseGame, update: updateTowerDefenseGame, render: renderTowerDefenseGame },
+      { id: 'streetracer', num: '21', cat: 'arcade', badge: 'RACING', icon: '🏎️', title: 'Pixel Street Racer', desc: 'Balapan jalanan pixel! Hindari lalu lintas, salip mobil, dan pakai boost!', ctrl: 'dpad2', init: initStreetRacerGame, update: updateStreetRacerGame, render: renderStreetRacerGame }
     ];
 
     const GAME_MAP = Object.fromEntries(GAMES_CATALOG.map((g) => [g.id, g]));
