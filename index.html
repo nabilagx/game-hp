@@ -127,6 +127,95 @@
       50% { transform: translateY(-3px); filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.85)); }
     }
     .hero-glow { animation: titleFloat 2.8s infinite ease-in-out; }
+
+    /* === CONTROLLER POLISH: one coherent pixel-console language === */
+    #controllerView {
+      --ctrl-ink: #080d1b;
+      --ctrl-panel: #111a2e;
+      --ctrl-line: #354765;
+      --ctrl-gold: #ffd166;
+      background:
+        radial-gradient(ellipse at 50% -15%, rgba(56,189,248,.18), transparent 55%),
+        linear-gradient(180deg, #0b1223 0%, #070b16 100%);
+      padding: clamp(10px, 2.8vw, 20px);
+      gap: 12px;
+    }
+    #controllerView > .flex.items-center.justify-between {
+      border: 2px solid var(--ctrl-line);
+      border-radius: 8px;
+      background: linear-gradient(180deg, #17233b, #0d1527);
+      box-shadow: 0 4px 0 #030611, inset 0 1px 0 rgba(255,255,255,.08);
+      padding: 12px;
+    }
+    #controllerView .pixel-btn,
+    #controllerView .touch-ctrl-btn,
+    #controllerView .color-pad-btn,
+    #controllerView .mole-pad-btn {
+      border-radius: 7px !important;
+      border-width: 3px !important;
+      box-shadow: inset -3px -3px 0 rgba(0,0,0,.28), inset 2px 2px 0 rgba(255,255,255,.2), 0 4px 0 #030611;
+      transition: transform .07s ease, filter .07s ease, box-shadow .07s ease;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    #controllerView .pixel-btn:active,
+    #controllerView .pixel-btn.pressed,
+    #controllerView .touch-ctrl-btn:active,
+    #controllerView .color-pad-btn:active,
+    #controllerView .mole-pad-btn:active {
+      transform: translateY(3px) scale(.985);
+      filter: brightness(1.15);
+      box-shadow: inset 2px 2px 0 rgba(0,0,0,.35), 0 1px 0 #030611;
+    }
+    #padStandardGamepad, #padFourColors, #padGridNine, #padDrawingCanvas, #padWordInput {
+      min-height: 0;
+      padding: 8px 2px 12px;
+    }
+    #padStandardGamepad .touch-ctrl-btn {
+      min-height: 84px;
+      border-color: #526783 !important;
+    }
+    #padStandardGamepad [data-ctrl="actionA"] {
+      background: linear-gradient(145deg, #37e6a0, #0e9f75) !important;
+      border-color: #9affd3 !important;
+    }
+    #padStandardGamepad [data-ctrl="actionB"] {
+      background: linear-gradient(145deg, #52d8f5, #1684b5) !important;
+      border-color: #a4efff !important;
+    }
+    #padFourColors .color-pad-btn {
+      min-height: 112px;
+      font-size: clamp(12px, 3.2vw, 18px);
+      letter-spacing: .04em;
+    }
+    #padGridNine .mole-pad-btn {
+      min-height: 76px;
+      font-size: clamp(25px, 8vw, 42px);
+      background: linear-gradient(145deg, #9b6530, #57351f) !important;
+      border-color: #f6c36a !important;
+      text-shadow: 2px 2px 0 #452515;
+    }
+    #padGridNine .mole-pad-btn:active { background: #d58a3c !important; }
+    #phoneDrawPad { touch-action: none; }
+    #ctrlWordTextInput, #manualPinInput { user-select: text; -webkit-user-select: text; }
+    #controllerView button:focus-visible {
+      outline: 3px solid #fff;
+      outline-offset: 3px;
+    }
+    @media (max-height: 650px) {
+      #controllerView { gap: 7px; padding: 8px; }
+      #padStandardGamepad .touch-ctrl-btn { min-height: 58px; }
+      #padFourColors .color-pad-btn { min-height: 76px; }
+      #padGridNine .mole-pad-btn { min-height: 54px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #controllerView .pixel-btn,
+      #controllerView .touch-ctrl-btn,
+      #controllerView .color-pad-btn,
+      #controllerView .mole-pad-btn { transition: none; }
+    }
+
   </style>
 </head>
 <body class="relative flex flex-col justify-between bg-slate-950 text-slate-100">
@@ -576,15 +665,15 @@
     <!-- ADAPTIVE PAD MODE 3: WHAC-A-MOLE 3x3 GRID (9 HOLES)                 -->
     <!-- =================================================================== -->
     <div id="padGridNine" class="hidden flex-1 grid grid-cols-3 grid-rows-3 gap-2.5 py-2">
-      <button data-mole-idx="0" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">1</button>
-      <button data-mole-idx="1" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">2</button>
-      <button data-mole-idx="2" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">3</button>
-      <button data-mole-idx="3" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">4</button>
-      <button data-mole-idx="4" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">5</button>
-      <button data-mole-idx="5" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">6</button>
-      <button data-mole-idx="6" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">7</button>
-      <button data-mole-idx="7" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">8</button>
-      <button data-mole-idx="8" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">9</button>
+      <button data-mole-idx="0" aria-label="Lubang target 1" title="Target 1" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">🔨</button>
+      <button data-mole-idx="1" aria-label="Lubang target 2" title="Target 2" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">🔨</button>
+      <button data-mole-idx="2" aria-label="Lubang target 3" title="Target 3" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">🔨</button>
+      <button data-mole-idx="3" aria-label="Lubang target 4" title="Target 4" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">🔨</button>
+      <button data-mole-idx="4" aria-label="Lubang target 5" title="Target 5" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">🔨</button>
+      <button data-mole-idx="5" aria-label="Lubang target 6" title="Target 6" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">🔨</button>
+      <button data-mole-idx="6" aria-label="Lubang target 7" title="Target 7" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">🔨</button>
+      <button data-mole-idx="7" aria-label="Lubang target 8" title="Target 8" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">🔨</button>
+      <button data-mole-idx="8" aria-label="Lubang target 9" title="Target 9" class="mole-pad-btn pixel-btn rounded-2xl bg-amber-700 border-4 border-amber-400 font-pixel text-xl text-white">🔨</button>
     </div>
 
     <!-- =================================================================== -->
@@ -3708,69 +3797,85 @@
     }
 
     function setupMultiTouchGamepad() {
-      const area = document.getElementById('padStandardGamepad');
       const buttons = Array.from(document.querySelectorAll('.touch-ctrl-btn'));
-      function evaluateTouches(touchList) {
-        const next = { left: false, right: false, up: false, down: false, actionA: false, actionB: false };
-        for (let i = 0; i < touchList.length; i++) {
-          const el = document.elementFromPoint(touchList[i].clientX, touchList[i].clientY);
-          const btn = el ? el.closest('.touch-ctrl-btn') : null;
-          if (btn?.dataset.ctrl) next[btn.dataset.ctrl] = true;
-        }
-        let changed = false;
-        Object.keys(next).forEach((k) => {
-          if (ctrlState[k] !== next[k]) {
-            ctrlState[k] = next[k];
-            changed = true;
-            if (next[k] && navigator.vibrate) { try { navigator.vibrate(15); } catch (_) {} }
+      const activePointers = new Map();
+      const pulse = (key) => { ctrlState[key] = Math.max(Date.now(), Number(ctrlState[key] || 0) + 1); };
+      const syncHeldButtons = () => {
+        const held = new Set(activePointers.values());
+        ['left', 'right', 'up', 'down', 'actionA', 'actionB'].forEach((key) => {
+          const next = held.has(key);
+          if (ctrlState[key] !== next) {
+            ctrlState[key] = next;
+            if (next && navigator.vibrate) { try { navigator.vibrate(12); } catch (_) {} }
           }
         });
-        buttons.forEach((b) => b.classList.toggle('pressed', Boolean(ctrlState[b.dataset.ctrl])));
-        if (changed) pushControllerState(true);
-      }
-      ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach((evt) => {
-        area.addEventListener(evt, (e) => { e.preventDefault(); evaluateTouches(e.touches); }, { passive: false });
-      });
-      buttons.forEach((btn) => {
-        const k = btn.dataset.ctrl;
-        btn.addEventListener('mousedown', () => { ctrlState[k] = true; btn.classList.add('pressed'); pushControllerState(true); });
-        const rel = () => { if (ctrlState[k]) { ctrlState[k] = false; btn.classList.remove('pressed'); pushControllerState(true); } };
-        btn.addEventListener('mouseup', rel);
-        btn.addEventListener('mouseleave', rel);
+        buttons.forEach((button) => button.classList.toggle('pressed', Boolean(ctrlState[button.dataset.ctrl])));
+        pushControllerState(true);
+      };
+
+      // Pointer Events handle touch, mouse, stylus and simultaneous fingers consistently.
+      buttons.forEach((button) => {
+        const key = button.dataset.ctrl;
+        button.addEventListener('pointerdown', (event) => {
+          if (!key) return;
+          event.preventDefault();
+          activePointers.set(event.pointerId, key);
+          try { button.setPointerCapture(event.pointerId); } catch (_) {}
+          syncHeldButtons();
+        });
+        const release = (event) => {
+          if (!activePointers.has(event.pointerId)) return;
+          activePointers.delete(event.pointerId);
+          syncHeldButtons();
+        };
+        button.addEventListener('pointerup', release);
+        button.addEventListener('pointercancel', release);
+        button.addEventListener('lostpointercapture', release);
+        button.addEventListener('contextmenu', (event) => event.preventDefault());
       });
 
-      // 4 Color Pads
-      document.querySelectorAll('.color-pad-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          ctrlState.colorChoice = Number(btn.dataset.colorIdx);
-          ctrlState.colorPulse = Date.now();
-          if (navigator.vibrate) { try { navigator.vibrate(25); } catch (_) {} }
+      // Tap pads send discrete game actions; indices are data IDs, not visual instructions.
+      document.querySelectorAll('.color-pad-btn').forEach((button) => {
+        button.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
+          ctrlState.colorChoice = Number(button.dataset.colorIdx);
+          pulse('colorPulse');
+          if (navigator.vibrate) { try { navigator.vibrate(20); } catch (_) {} }
           pushControllerState(true);
         });
       });
 
-      document.getElementById('ctrlBuzzerBtn').addEventListener('click', () => {
-        ctrlState.specialPulse = Date.now();
-        if (navigator.vibrate) { try { navigator.vibrate(50); } catch (_) {} }
+      const buzzer = document.getElementById('ctrlBuzzerBtn');
+      buzzer.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        pulse('specialPulse');
+        if (navigator.vibrate) { try { navigator.vibrate(45); } catch (_) {} }
         pushControllerState(true);
       });
 
-      // 9 Mole Holes Grid
-      document.querySelectorAll('.mole-pad-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          ctrlState.moleHit = Number(btn.dataset.moleIdx);
-          ctrlState.molePulse = Date.now();
-          if (navigator.vibrate) { try { navigator.vibrate(25); } catch (_) {} }
+      document.querySelectorAll('.mole-pad-btn').forEach((button) => {
+        button.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
+          ctrlState.moleHit = Number(button.dataset.moleIdx);
+          pulse('molePulse');
+          if (navigator.vibrate) { try { navigator.vibrate(22); } catch (_) {} }
+          button.classList.add('pressed');
           pushControllerState(true);
         });
+        const release = () => button.classList.remove('pressed');
+        button.addEventListener('pointerup', release);
+        button.addEventListener('pointercancel', release);
+        button.addEventListener('lostpointercapture', release);
       });
 
-      // Word Input on Phone
+      document.getElementById('ctrlWordTextInput').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') document.getElementById('ctrlSendWordBtn').click();
+      });
       document.getElementById('ctrlSendWordBtn').addEventListener('click', () => {
         const inp = document.getElementById('ctrlWordTextInput');
         if (!inp.value.trim()) return;
         ctrlState.wordText = inp.value.trim();
-        ctrlState.wordPulse = Date.now();
+        pulse('wordPulse');
         inp.value = '';
         pushControllerState(true);
       });
