@@ -216,6 +216,9 @@
       #controllerView .mole-pad-btn { transition: none; }
     }
 
+  #gameStageView{height:100dvh;min-height:0} #gameStageView>main{min-height:0;flex:1 1 auto} #gameStageView canvas{width:100%;height:100%;object-fit:fill}
+  @media(max-width:700px){#gameStageView>header{padding:5px 7px;gap:5px;border-bottom-width:2px}#gameStageView #toggleSimPadBtn{display:none}#gameStageView #activeGameBadge{max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#gameStageView>main{height:calc(100dvh - 52px)}}
+  #controllerView{height:100dvh;min-height:100dvh;overflow:hidden;padding:max(8px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
   </style>
 </head>
 <body class="relative flex flex-col justify-between bg-slate-950 text-slate-100">
@@ -226,7 +229,7 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- VIEW 1: HOME ARCADE LAUNCHER (21 GAMES COLLECTION)                    -->
+  <!-- VIEW 1: HOME ARCADE LAUNCHER (TWO FEATURED GAMES)                    -->
   <!-- ===================================================================== -->
   <div id="launcherView" class="arcade-bg-grid relative w-full h-full flex flex-col overflow-y-auto">
 
@@ -234,7 +237,7 @@
     <header class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-6 bg-slate-950/90 backdrop-blur-xs border-b-4 border-slate-800">
       <div class="flex items-center gap-2.5">
         <div class="px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 border-2 border-white rounded text-slate-950 font-pixel text-[9px] sm:text-xs">
-          🕹️ 20-IN-1 ARCADE
+          🕹️ NAGALA ARCADE
         </div>
         <div class="hidden md:flex items-center gap-1.5 px-3 py-1 rounded bg-slate-900 border border-sky-500/50 text-sky-300 text-sm sm:text-base">
           <span>Developer:</span>
@@ -265,7 +268,7 @@
       <section class="pixel-card rounded-2xl p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-7 text-center lg:text-left space-y-2">
           <div class="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-indigo-950 border border-indigo-400/60 text-indigo-200 text-sm">
-            <span>🎓 KOLEKSI LENGKAP 21 GAME PIXEL</span>
+            <span>🎓 2 GAME UTAMA</span>
             <span>•</span>
             <span class="text-amber-300 font-bold">NAGALA EDU</span>
           </div>
@@ -280,7 +283,7 @@
           </div>
 
           <p class="text-base sm:text-lg text-slate-300 leading-snug">
-            Pilih salah satu dari <b>21 Game Pixel Interaktif</b>! Kontroler HP otomatis menyesuaikan tombol (D-Pad, Kuis ABCD, Grid Pukul Tikus, Kanvas Gambar, hingga Keypad Kata).
+            Pilih game, sambungkan HP sebagai controller, lalu mainkan balapan ekstrem atau belajar melodi dengan piano interaktif.
           </p>
         </div>
 
@@ -326,7 +329,7 @@
               🧩 STRATEGI & PUZZLE (5)
             </button>
           </div>
-          <span id="visibleGameCount" class="text-sm text-slate-400">Menampilkan 21 Game</span>
+          <span id="visibleGameCount" class="text-sm text-slate-400">Menampilkan 2 Game</span>
         </div>
 
         <!-- Dynamic 20-Game Cartridge Grid -->
@@ -335,7 +338,7 @@
 
       <!-- Footer Signature -->
       <footer class="text-center border-t border-slate-800/90 pt-3 pb-2 text-sm sm:text-base text-slate-400">
-        © 2026 <strong class="text-amber-300">Nagala Edu - Nabila Choirunisa</strong> • 21-in-1 Pixel Arcade Console dengan Kontroler HP Nirkabel
+        © 2026 <strong class="text-amber-300">Nagala Edu - Nabila Choirunisa</strong> • 2-Game Arcade • HP jadi setir & piano
       </footer>
     </div>
   </div>
@@ -349,7 +352,7 @@
     <header class="relative z-20 flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5 bg-slate-950/95 border-b-4 border-slate-800">
       <div class="flex items-center gap-2">
         <button id="backToLauncherBtn" class="pixel-btn px-2.5 py-1 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-pixel text-[9px] sm:text-[10px]">
-          🏠 21 GAME
+          🏠 MENU
         </button>
 
         <div id="activeGameBadge" class="px-2.5 py-1 bg-rose-600 border-2 border-white rounded text-white font-pixel text-[9px] sm:text-xs">
@@ -478,7 +481,7 @@
   <div id="manualModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-xs overflow-y-auto">
     <div class="pixel-card w-full max-w-2xl rounded-xl p-5 sm:p-6 text-left my-auto">
       <div class="flex items-center justify-between border-b-2 border-slate-700 pb-3 mb-4">
-        <h2 class="font-pixel text-xs sm:text-base text-amber-400">📱 KONEKSI HP & PANDUAN 21 GAME</h2>
+        <h2 class="font-pixel text-xs sm:text-base text-amber-400">📱 KONEKSI HP & PANDUAN</h2>
         <button id="closeManualBtn" class="pixel-btn px-3 py-1 rounded bg-rose-600 text-white font-pixel text-[10px]">TUTUP [X]</button>
       </div>
 
@@ -493,7 +496,7 @@
             <li>Buka link web <b>Nagala Edu Arcade</b> ini di browser HP.</li>
             <li>Tekan tombol <b class="text-sky-300">"📱 MODE HP"</b> di pojok kanan atas.</li>
             <li>Scan QR atau ketik <b>4 kode PIN</b> di samping.</li>
-            <li>Stik HP otomatis berubah bentuk sesuai game yang dimainkan (D-Pad, Kuis ABCD, Grid 3×3 Tikus, Pictionary, atau Keypad Kata)!</li>
+            <li>Controller HP menyesuaikan game: setir + klakson + nitro untuk Racing, atau tombol nada untuk Piano.</li>
           </ol>
         </div>
       </div>
@@ -518,7 +521,7 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- VIEW 3: ADAPTIVE MOBILE PHONE CONTROLLER (SUPPORTS ALL 21 GAMES)      -->
+  <!-- VIEW 3: ADAPTIVE MOBILE PHONE CONTROLLER (TWO GAME CONTROLLER)      -->
   <!-- ===================================================================== -->
   <div id="controllerView" class="hidden controller-surface relative w-full h-full flex flex-col justify-between bg-slate-950 p-3 sm:p-4">
 
@@ -1168,7 +1171,7 @@
 
       if (data.colorPulse && data.colorPulse !== lastColorHandled) {
         lastColorHandled = data.colorPulse;
-        pendingColorChoice = data.colorChoice;
+        if(activeGameId==='piano') pendingPianoNote=data.colorChoice; else pendingColorChoice=data.colorChoice;
       }
 
       if (data.molePulse && data.molePulse !== lastMoleHandled) {
@@ -3461,7 +3464,7 @@
       currentScore = 0;
       Object.assign(streetRacerState, {
         lane: 1, traffic: [], spawnTimer: 0.65, roadOffset: 0,
-        distance: 0, speed: 118, boost: 100, flash: 0, bestNearMiss: 0
+        distance: 0, speed: 118, boost: 100, flash: 0, bestNearMiss: 0, steerCooldown: 0, horn: 0
       });
       for (let i = 0; i < 3; i++) {
         streetRacerState.traffic.push({
@@ -3476,10 +3479,13 @@
 
     function updateStreetRacerGame(dt) {
       const st = streetRacerState;
-      if (justPressed.left) st.lane = Math.max(0, st.lane - 1);
-      if (justPressed.right) st.lane = Math.min(2, st.lane + 1);
-
-      const boosting = getUnifiedInput().actionA && st.boost > 0;
+      const drive = getUnifiedInput();
+      st.steerCooldown = Math.max(0,(st.steerCooldown||0)-dt);
+      if(st.steerCooldown<=0&&drive.left){st.lane=Math.max(0,st.lane-1);st.steerCooldown=.16;}
+      if(st.steerCooldown<=0&&drive.right){st.lane=Math.min(2,st.lane+1);st.steerCooldown=.16;}
+      if(justPressed.actionB){st.horn=.25;audio.playTone(740,.12,'square',.12);}
+      st.horn=Math.max(0,(st.horn||0)-dt);
+      const boosting = drive.actionA && st.boost > 0;
       st.boost = Math.max(0, Math.min(100, st.boost + (boosting ? -34 : 13) * dt));
       st.speed = boosting ? 205 : 118;
       st.roadOffset = (st.roadOffset + st.speed * dt) % 48;
@@ -3569,7 +3575,8 @@
       }
       const laneX = [roadX + 51, roadX + 145, roadX + 239];
       st.traffic.forEach((car) => drawPixelCar(laneX[car.lane], car.y, car.color));
-      drawPixelCar(laneX[st.lane], 184, '#22c55e', true);
+      drawPixelCar(laneX[st.lane], 184, st.skin || '#22c55e', true);
+      if(st.horn>0){ctx.fillStyle='#fef08a';ctx.font='10px monospace';ctx.fillText('BEEP! BEEP!',145,38);}
       ctx.fillStyle = '#e2e8f0';
       ctx.font = '8px "Press Start 2P", monospace';
       ctx.textAlign = 'left';
@@ -3587,34 +3594,63 @@
       }
     }
 
+
+    // Guided piano: follow the highlighted notes on the phone controller.
+    const PIANO_NOTES = [
+      {name:'DO',hz:261.63},{name:'RE',hz:293.66},{name:'MI',hz:329.63},{name:'FA',hz:349.23},
+      {name:'SOL',hz:392},{name:'LA',hz:440},{name:'SI',hz:493.88},{name:'DO+',hz:523.25}
+    ];
+    const PIANO_SONGS = [
+      {name:'Tangga Nada',notes:[0,1,2,3,4,5,6,7]},
+      {name:'Ibu Kita Kartini',notes:[4,2,4,5,6,4,2,1,2,4,5,4,2,1,0,1,2,4,2,1,0]},
+      {name:'Twinkle Twinkle',notes:[0,0,4,4,5,5,4,3,3,2,2,1,1,0]}
+    ];
+    let pendingPianoNote = -1;
+    const pianoState = {song:0,step:0,last:-1,flash:0,message:'IKUTI NADA YANG DISOROT'};
+    function initPianoGame(){currentScore=0;pianoState.song=0;pianoState.step=0;pianoState.last=-1;pianoState.flash=0;pianoState.message='IKUTI NADA YANG DISOROT';}
+    function playPianoNote(n){
+      if(n<0||n>7)return;
+      pianoState.last=n;pianoState.flash=.18;
+      audio.playTone(PIANO_NOTES[n].hz,.24,'sine',.16);
+      const seq=PIANO_SONGS[pianoState.song].notes;
+      if(n===seq[pianoState.step]){
+        pianoState.step++;currentScore+=100;pianoState.message='BENAR! LANJUTKAN!';
+        if(pianoState.step>=seq.length)triggerGameOver('LAGU SELESAI!', 'Berhasil memainkan '+PIANO_SONGS[pianoState.song].name+'!');
+      }else pianoState.message='COBA LAGI — PERHATIKAN NADA KUNING';
+    }
+    function updatePianoGame(dt){
+      pianoState.flash=Math.max(0,pianoState.flash-dt);
+      if(pendingPianoNote>=0){const n=pendingPianoNote;pendingPianoNote=-1;playPianoNote(n);}
+      if(justPressed.left)pianoState.song=(pianoState.song+PIANO_SONGS.length-1)%PIANO_SONGS.length;
+      if(justPressed.right)pianoState.song=(pianoState.song+1)%PIANO_SONGS.length;
+      updateTopHud(currentScore,'PROGRES',(pianoState.step)+'/'+PIANO_SONGS[pianoState.song].notes.length,'LAGU','← PILIH →');
+    }
+    function renderPianoGame(){
+      ctx.fillStyle='#11182d';ctx.fillRect(0,0,VIRT_W,VIRT_H);
+      const seq=PIANO_SONGS[pianoState.song].notes;
+      ctx.fillStyle='#f8fafc';ctx.textAlign='center';ctx.font='9px "Press Start 2P"';
+      ctx.fillText(PIANO_SONGS[pianoState.song].name.toUpperCase(),VIRT_W/2,18);
+      for(let i=0;i<Math.min(8,seq.length-pianoState.step);i++){
+        ctx.fillStyle=i===0?'#facc15':'#64748b';ctx.fillRect(18+i*41,29,34,17);
+        ctx.fillStyle='#0f172a';ctx.font='7px "Press Start 2P"';ctx.fillText(PIANO_NOTES[seq[pianoState.step+i]].name,35+i*41,41);
+      }
+      const kw=39,g=4,x0=3;
+      PIANO_NOTES.forEach((n,i)=>{
+        const x=x0+i*(kw+g),active=seq[pianoState.step]===i;
+        ctx.fillStyle=active?'#facc15':'#f8fafc';ctx.fillRect(x,62,kw,125);
+        ctx.fillStyle='#1e293b';ctx.fillRect(x+3,65,kw-6,119);
+        ctx.fillStyle=active?'#fef08a':'#e2e8f0';ctx.fillRect(x+5,68,kw-10,112);
+        ctx.fillStyle='#0f172a';ctx.font='7px "Press Start 2P"';ctx.fillText(n.name,x+kw/2,172);
+      });
+      ctx.fillStyle='#bae6fd';ctx.font='8px "Press Start 2P"';ctx.fillText(pianoState.message,VIRT_W/2,216);
+    }
+
     // =========================================================================
     // 6. MASTER 20-GAME CATALOG REGISTRY
     // =========================================================================
     const GAMES_CATALOG = [
-      { id: 'quiz', num: '01', cat: 'edu', badge: 'EDU PARTY', icon: '🔔', title: 'Cerdas Cermat Bel', desc: 'Adu cepat tekan bel rebutan melawan Bot & jawab kuis A/B/C/D!', ctrl: 'colors4', init: initQuizGame, update: updateQuizGame, render: renderQuizGame },
-      { id: 'pictionary', num: '02', cat: 'edu', badge: 'GAMBAR', icon: '🎨', title: 'Pixel Pictionary', desc: 'Gambar kata rahasia di layar HP & biarkan teman menebaknya!', ctrl: 'draw', init: initPictionaryGame, update: updatePictionaryGame, render: renderPictionaryGame },
-      { id: 'wordbomb', num: '03', cat: 'edu', badge: 'KATA', icon: '💣', title: 'Bom Kata (Word)', desc: 'Ketik kata dari suku kata wajib sebelum sumbu bom meledak!', ctrl: 'word', init: initWordBombGame, update: updateWordBombGame, render: renderWordBombGame },
-      { id: 'mathninja', num: '04', cat: 'edu', badge: 'HITUNG', icon: '🥷', title: 'Math Ninja Angka', desc: 'Tebas meteor angka jawaban soal matematika sebelum jatuh!', ctrl: 'colors4', init: initMathNinjaGame, update: updateMathNinjaGame, render: renderMathNinjaGame },
-      { id: 'simon', num: '05', cat: 'edu', badge: 'MEMORI', icon: '🎶', title: 'Simon Memory Pixel', desc: 'Ingat dan tirukan urutan pola warna serta nada 8-bit!', ctrl: 'colors4', init: initSimonGame, update: updateSimonGame, render: renderSimonGame },
-
-      { id: 'bomberman', num: '06', cat: 'arcade', badge: 'KLASIK', icon: '🧨', title: 'Bomberman Arena', desc: 'Hancurkan balok labirin & basmi monster slime dengan bom!', ctrl: 'dpad4', init: initBombermanGame, update: updateBombermanGame, render: renderBombermanGame },
-      { id: 'tank', num: '07', cat: 'arcade', badge: '1990', icon: '🚜', title: 'Tank Battle 1990', desc: 'Lindungi markas elang emas dari serbuan tank musuh!', ctrl: 'dpad4', init: initTankGame, update: updateTankGame, render: renderTankGame },
-      { id: 'flappy', num: '08', cat: 'arcade', badge: 'ASTRO', icon: '🚀', title: 'Jetpack Flappy Astro', desc: 'Terbangkan astronot melewati celah gerbang laser angkasa!', ctrl: 'dpad2', init: initFlappyGame, update: updateFlappyGame, render: renderFlappyGame },
-      { id: 'runner', num: '09', cat: 'arcade', badge: 'RUNNER', icon: '⚡', title: 'Ninja Endless Runner', desc: 'Lompati duri & menunduk (slide) menghindari drone cyber!', ctrl: 'dpad2', init: initRunnerGame, update: updateRunnerGame, render: renderRunnerGame },
-      { id: 'crossy', num: '10', cat: 'arcade', badge: 'FROGGER', icon: '🐸', title: 'Crossy Pixel Road', desc: 'Seberangi jalan raya padat kendaraan menuju garis emas!', ctrl: 'dpad4', init: initCrossyGame, update: updateCrossyGame, render: renderCrossyGame },
-
-      { id: 'airhockey', num: '11', cat: 'sports', badge: 'NEON', icon: '🏒', title: 'Neon Air Hockey', desc: 'Duel hoki udara neon dengan jurus Super Smash!', ctrl: 'dpad2', init: initAirHockeyGame, update: updateAirHockeyGame, render: renderAirHockeyGame },
-      { id: 'soccer', num: '12', cat: 'sports', badge: '1V1 BOLA', icon: '⚽', title: 'Tiny Pixel Soccer', desc: 'Pertandingan sepak bola mini 1v1 dengan tendangan api!', ctrl: 'dpad2', init: initSoccerGame, update: updateSoccerGame, render: renderSoccerGame },
-      { id: 'sumo', num: '13', cat: 'sports', badge: 'DUEL', icon: '🖐️', title: 'Sumo Pixel Push', desc: 'Tap cepat untuk mendorong lawan keluar dari ring sumo!', ctrl: 'dpad2', init: initSumoGame, update: updateSumoGame, render: renderSumoGame },
-      { id: 'archery', num: '14', cat: 'sports', badge: 'BIDIK', icon: '🏹', title: 'Archery Wind Duel', desc: 'Atur sudut & tenaga busur dengan memperhitungkan angin!', ctrl: 'dpad2', init: initArcheryGame, update: updateArcheryGame, render: renderArcheryGame },
-      { id: 'fishing', num: '15', cat: 'sports', badge: 'SANTAI', icon: '🎣', title: 'Fishing Mania Pixel', desc: 'Pancing ikan langka & jaga ketegangan senar tetap aman!', ctrl: 'dpad2', init: initFishingGame, update: updateFishingGame, render: renderFishingGame },
-
-      { id: 'overcooked', num: '16', cat: 'puzzle', badge: 'DAPUR', icon: '🍔', title: 'Overcooked Pixel', desc: 'Ambil bahan, masak di kompor, dan sajikan burger secepatnya!', ctrl: 'dpad4', init: initOvercookedGame, update: updateOvercookedGame, render: renderOvercookedGame },
-      { id: 'tetris', num: '17', cat: 'puzzle', badge: 'PUZZLE', icon: '🧱', title: 'Tetris Block Drop', desc: 'Susun balok jatuh & bersihkan baris untuk kombo skor!', ctrl: 'dpad2', init: initTetrisGame, update: updateTetrisGame, render: renderTetrisGame },
-      { id: 'whacamole', num: '18', cat: 'puzzle', badge: 'REFLEKS', icon: '🔨', title: 'Whac-A-Mole 3×3', desc: 'Pukul tikus tanah pada 9 lubang grid 3×3 & hindari bom!', ctrl: 'grid9', init: initWhacAMoleGame, update: updateWhacAMoleGame, render: renderWhacAMoleGame },
-      { id: 'rhythm', num: '19', cat: 'puzzle', badge: 'MUSIK', icon: '🎸', title: 'Rhythm Guitar Pixel', desc: 'Tekan 4 jalur warna tepat mengikuti ketukan musik chiptune!', ctrl: 'colors4', init: initRhythmGame, update: updateRhythmGame, render: renderRhythmGame },
-      { id: 'tower', num: '20', cat: 'puzzle', badge: 'STRATEGI', icon: '🏰', title: 'Tower Defense Kingdom', desc: 'Bangun menara panah (A) & sihir (B) untuk menjaga kastil!', ctrl: 'dpad4', init: initTowerDefenseGame, update: updateTowerDefenseGame, render: renderTowerDefenseGame },
-      { id: 'streetracer', num: '21', cat: 'arcade', badge: 'RACING', icon: '🏎️', title: 'Pixel Street Racer', desc: 'Balapan jalanan pixel! Hindari lalu lintas, salip mobil, dan pakai boost!', ctrl: 'dpad2', init: initStreetRacerGame, update: updateStreetRacerGame, render: renderStreetRacerGame }
+      { id: 'streetracer', num: '01', cat: 'arcade', badge: 'EXTREME RACING', icon: '🏎️', title: 'Extreme Racing', desc: 'Lintasan ekstrem, tikungan tajam, klakson, nitro, dan pilihan skin mobil.', ctrl: 'racing', init: initStreetRacerGame, update: updateStreetRacerGame, render: renderStreetRacerGame },
+      { id: 'piano', num: '02', cat: 'music', badge: 'MUSIC LAB', icon: '🎹', title: 'Piano Do-Re-Mi', desc: 'Ikuti panduan nada untuk Ibu Kita Kartini, Twinkle Twinkle, dan latihan tangga nada.', ctrl: 'piano', init: initPianoGame, update: updatePianoGame, render: renderPianoGame }
     ];
 
     const GAME_MAP = Object.fromEntries(GAMES_CATALOG.map((g) => [g.id, g]));
@@ -3625,7 +3661,7 @@
       const countEl = document.getElementById('visibleGameCount');
       if (!container) return;
 
-      const filtered = filterCat === 'all' ? GAMES_CATALOG : GAMES_CATALOG.filter((g) => g.cat === filterCat);
+      const filtered = GAMES_CATALOG;
       if (countEl) countEl.textContent = `Menampilkan ${filtered.length} Game`;
 
       container.innerHTML = '';
@@ -3665,6 +3701,7 @@
       isGameOver = false;
       pendingColorChoice = -1;
       pendingMoleHit = -1;
+      pendingPianoNote = -1;
 
       document.getElementById('launcherView').classList.add('hidden');
       document.getElementById('gameStageView').classList.remove('hidden');
@@ -3737,10 +3774,23 @@
         return;
       }
 
-      const g = GAME_MAP[gameId] || GAME_MAP.quiz;
+      const g = GAME_MAP[gameId] || GAME_MAP.streetracer;
       if (tagEl) tagEl.textContent = `#${g.num} ${g.title.toUpperCase()}`;
 
-      if (g.ctrl === 'colors4') {
+      if (g.ctrl === 'piano') {
+        padCol.classList.remove('hidden');
+        document.getElementById('ctrlBuzzerBtn').classList.add('hidden');
+        const names=['DO','RE','MI','FA'];
+        document.querySelectorAll('.color-pad-btn').forEach((b,i)=>{b.innerHTML='<span>'+names[i]+'</span><span class="text-xs font-vt mt-1">NADA</span>';});
+      } else if (g.ctrl === 'racing') {
+        padStd.classList.remove('hidden');
+        document.getElementById('leftPadContainer').classList.remove('hidden');
+        document.getElementById('fourWayPadContainer').classList.add('hidden');
+        document.getElementById('ctrlBtnALabel').textContent='NITRO';
+        document.getElementById('ctrlBtnAIcon').textContent='⚡';
+        document.getElementById('ctrlBtnBLabel').textContent='KLAKSON';
+        document.getElementById('ctrlBtnBIcon').textContent='📣';
+      } else if (g.ctrl === 'colors4') {
         padCol.classList.remove('hidden');
         document.getElementById('ctrlBuzzerBtn').classList.toggle('hidden', gameId !== 'quiz');
       } else if (g.ctrl === 'grid9') {
