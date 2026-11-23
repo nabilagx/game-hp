@@ -3553,23 +3553,30 @@
         ctx.fillRect(4, y, 22, 12);
         ctx.fillRect(VIRT_W - 26, y, 22, 12);
       }
-      const roadX = 34, roadW = 292;
+      const roadW = 292;
+      const curveAt = (y) => Math.sin((y + st.roadOffset) * 0.026) * 23 + Math.sin((y + st.roadOffset) * 0.011) * 13;
       ctx.fillStyle = '#303744';
-      ctx.fillRect(roadX, 0, roadW, VIRT_H);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(roadX + 3, 0, 3, VIRT_H);
-      ctx.fillRect(roadX + roadW - 6, 0, 3, VIRT_H);
-      ctx.fillStyle = '#facc15';
-      ctx.fillRect(roadX + 8, 0, 3, VIRT_H);
-      ctx.fillRect(roadX + roadW - 11, 0, 3, VIRT_H);
-      ctx.fillStyle = 'rgba(255,255,255,.72)';
-      for (let y = -42 + st.roadOffset; y < VIRT_H; y += 48) {
-        ctx.fillRect(roadX + 98, y, 3, 25);
-        ctx.fillRect(roadX + 192, y, 3, 25);
+      for(let y=0;y<VIRT_H;y+=4){
+        const shift=curveAt(y), left=34+shift;
+        ctx.fillRect(left,y,roadW,5);
+        ctx.fillStyle='#f8fafc';ctx.fillRect(left+3,y,3,5);ctx.fillRect(left+roadW-6,y,3,5);
+        ctx.fillStyle='#facc15';ctx.fillRect(left+8,y,3,5);ctx.fillRect(left+roadW-11,y,3,5);
+        ctx.fillStyle='#303744';
       }
-      const laneX = [roadX + 51, roadX + 145, roadX + 239];
-      st.traffic.forEach((car) => drawPixelCar(laneX[car.lane], car.y, car.color));
-      drawPixelCar(laneX[st.lane], 184, st.skin || '#22c55e', true);
+      for (let y = -42 + st.roadOffset; y < VIRT_H; y += 48) {
+        const shift=curveAt(y);
+        ctx.fillStyle='rgba(255,255,255,.78)';
+        ctx.fillRect(34+shift+98,y,3,25);ctx.fillRect(34+shift+192,y,3,25);
+      }
+      // Road humps / rumble strips add a visible arcade challenge.
+      for(let y=-90+(st.roadOffset*1.7%105);y<VIRT_H;y+=105){
+        const shift=curveAt(y+10);
+        ctx.fillStyle='#facc15';ctx.fillRect(34+shift+20,y,roadW-40,4);
+        ctx.fillStyle='#ef4444';for(let x=42+shift;x<316+shift;x+=24)ctx.fillRect(x,y,10,4);
+      }
+      const laneXAt = (y) => {const base=34+curveAt(y);return [base+51,base+145,base+239];};
+      st.traffic.forEach((car) => drawPixelCar(laneXAt(car.y)[car.lane], car.y, car.color));
+      drawPixelCar(laneXAt(184)[st.lane], 184, st.skin || '#22c55e', true);
       if(st.horn>0){ctx.fillStyle='#fef08a';ctx.font='10px monospace';ctx.fillText('BEEP! BEEP!',145,38);}
       ctx.fillStyle = '#e2e8f0';
       ctx.font = '8px "Press Start 2P", monospace';
